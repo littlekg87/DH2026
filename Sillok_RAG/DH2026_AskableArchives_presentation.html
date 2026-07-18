@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From Searchable Archives to Askable Archives · DH2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ---- accent: celadon jade (Ask Sillok identity) ---- */
+  --jade:#1F9D94; --jade-txt:#12756E; --jade-ink:#F4F1EA;
+  /* ---- surfaces (light default) ---- */
+  --paper:#F2ECDE; --bg-sunk:#E7E0CD; --bg-1:#F8F3E8; --bg-2:#FFFFFF; --bg-3:#FFFFFF;
+  --line-faint:#E0D8C2; --line:#C9C0A8; --line-strong:#B0A788; --line-em:#9A917A;
+  --ink:#20201C; --ink-70:#4A463C; --ink-45:#867F6D; --ink-30:#A79F8A;
+  --cinnabar:#B0492E; --gold:#B08D57;
+  --mark-a:31,157,148; --mark-b:63,191,180;
+  --rgb-surf:255,255,255; --rgb-ink:32,32,28; --rgb-jade:31,157,148;
+  --shadow:150,140,120;
+  --serif:"Noto Serif",serif; --sans:"Inter",sans-serif; --mono:"JetBrains Mono",monospace;
+  --W:1280px; --H:720px;
+}
+html[data-theme="dark"]{
+  --jade:#3FBFB4; --jade-txt:#5FD4C9; --jade-ink:#141414;
+  --paper:#1c1c19; --bg-sunk:#141412; --bg-1:#232320; --bg-2:#2a2a26; --bg-3:#323230;
+  --line-faint:#2e2e2a; --line:#3d3d38; --line-strong:#4d4d47; --line-em:#5a5a52;
+  --ink:#F0EDE2; --ink-70:#c4bfae; --ink-45:#8a8576; --ink-30:#6a665a;
+  --cinnabar:#d97757; --gold:#c9a76a;
+  --rgb-surf:35,35,32; --rgb-ink:240,237,226; --shadow:0,0,0;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  background:var(--bg-sunk); color:var(--ink); font-family:var(--serif);
+  display:flex; align-items:center; justify-content:center; min-height:100vh; overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+.stage{width:var(--W);height:var(--H);position:relative;transform-origin:center center;}
+.slide{position:absolute;inset:0;width:var(--W);height:var(--H);background:var(--paper);overflow:hidden;display:none;}
+.slide.active{display:block;}
+::selection{background:rgba(var(--rgb-jade),.22);}
+
+/* ===================== shared editorial system ===================== */
+.masthead{
+  position:absolute; left:80px; right:80px; top:56px;
+  display:flex; justify-content:space-between; align-items:flex-end;
+  padding-bottom:16px; border-bottom:1.5px solid var(--ink);
+}
+.masthead .eyebrow{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.32em;
+  text-transform:uppercase;color:var(--ink);}
+.masthead .num{font-family:var(--sans);font-size:12px;font-weight:500;letter-spacing:.1em;color:var(--ink-45);margin-right:150px;cursor:pointer;transition:color .2s ease;}
+.masthead .num:hover{color:var(--jade-txt);}
+.masthead .num::after{content:" \25BE";font-size:9px;opacity:.6;}
+
+.hl{position:absolute; left:80px; right:80px; top:118px;}
+.hl .q{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--ink-45);margin-bottom:16px;}
+.hl h1{font-family:var(--serif);font-weight:900;font-size:52px;line-height:1.1;
+  letter-spacing:-.02em;color:var(--ink);}
+.hl h1.med{font-size:38px;line-height:1.2;}
+.rstage{font-family:var(--sans);font-weight:700;font-size:.6em;color:var(--jade-txt);margin-right:.3em;}
+
+/* highlighter mark */
+.mark{color:var(--ink);font-weight:700;
+  background-image:linear-gradient(180deg,rgba(var(--mark-a),.85) 0%,rgba(var(--mark-b),.75) 100%);
+  background-repeat:no-repeat;background-position:0 center;background-size:100% 42%;padding:0 .08em;}
+html[data-theme="dark"] .mark{color:var(--jade-ink);
+  background-image:linear-gradient(180deg,rgba(var(--mark-a),.95) 0%,rgba(var(--mark-b),.9) 100%);
+  background-size:100% 82%;}
+
+/* two-axis block (used on several slides) */
+.axes{position:absolute;left:80px;right:80px;top:330px;display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.axis{padding:4px 44px 0 0;}
+.axis:last-child{padding:4px 0 0 44px;border-left:1.5px solid var(--line);}
+.axis .lab{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+.axis .lab::before{content:"";width:22px;height:9px;background:var(--jade);display:inline-block;}
+.axis h3{font-family:var(--serif);font-weight:700;font-size:23px;line-height:1.25;color:var(--ink);margin-bottom:12px;}
+.axis p{font-family:var(--sans);font-size:16px;line-height:1.65;color:var(--ink-70);font-weight:400;}
+.axis p .key{color:var(--ink);font-weight:700;}
+
+/* punch bar */
+.punch{position:absolute;left:80px;right:80px;bottom:60px;background:var(--jade);color:var(--jade-ink);
+  padding:22px 30px;display:flex;align-items:baseline;gap:24px;}
+.punch .so{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  white-space:nowrap;opacity:.78;}
+.punch .t{font-family:var(--serif);font-size:20px;line-height:1.5;font-weight:400;opacity:.95;}
+.punch .t b{font-weight:700;}
+
+/* generic footnote line at bottom */
+.foot{position:absolute;left:80px;right:80px;bottom:56px;font-family:var(--sans);font-size:14px;
+  line-height:1.55;color:var(--ink-45);}
+.foot b{color:var(--ink-70);font-weight:600;}
+.foot code{font-family:var(--mono);font-size:.9em;color:var(--cinnabar);background:var(--bg-sunk);padding:.1em .35em;border-radius:4px;}
+
+/* ===================== NAV + chrome ===================== */
+.nav{position:absolute;right:80px;top:22px;z-index:60;display:flex;gap:5px;}
+.nav-b{width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;
+  background:transparent;border:1px solid var(--line);border-radius:3px;cursor:pointer;color:var(--ink-45);
+  transition:.2s;}
+.nav-b svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.nav-b:hover{border-color:var(--jade);color:var(--jade-txt);background:rgba(var(--rgb-jade),.08);}
+.nav-b:active{transform:scale(.92);}
+.nav-b:disabled{opacity:.28;cursor:default;}
+.nav-b:disabled:hover{border-color:var(--line);color:var(--ink-45);background:transparent;}
+.nav-theme{width:76px;font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
+#navTheme .th-light{display:none;} html[data-theme="light"] #navTheme .th-light{display:inline;}
+html[data-theme="light"] #navTheme .th-dark{display:none;}
+
+.progress{position:absolute;left:0;top:0;height:3px;background:var(--jade);z-index:70;transition:width .35s ease;}
+.pagenum{position:absolute;left:80px;bottom:24px;font-family:var(--mono);font-size:12px;color:var(--ink-30);letter-spacing:.1em;z-index:60;}
+.pagenum b{color:var(--ink-70);}
+.stephint{position:absolute;right:80px;bottom:24px;font-family:var(--mono);font-size:11px;color:var(--ink-30);letter-spacing:.06em;z-index:60;}
+.stephint .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--line-strong);margin:0 2px;transition:.2s;}
+.stephint .dot.on{background:var(--jade);}
+
+@media print{.nav,.pagenum,.stephint{display:none!important;}}
+</style>
+<style>
+/* ===================== TITLE (S1) ===================== */
+.s-title .tt-wrap{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:0 90px;}
+.s-title .tt-seal{width:60px;height:60px;border:2.5px solid var(--cinnabar);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-family:var(--sans);font-weight:700;
+  font-size:12px;letter-spacing:.1em;color:var(--cinnabar);margin-bottom:26px;}
+.s-title .tt-eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--cinnabar);margin-bottom:22px;}
+.s-title h1{font-family:var(--serif);font-weight:900;font-size:60px;line-height:1.08;letter-spacing:-.025em;color:var(--ink);}
+.s-title .tt-sub{font-family:var(--sans);font-weight:300;font-size:21px;color:var(--ink-70);margin-top:22px;line-height:1.5;}
+.s-title .tt-by{font-family:var(--sans);font-size:16px;color:var(--ink-70);margin-top:40px;line-height:1.8;}
+.s-title .tt-by b{color:var(--ink);font-weight:600;}
+.s-title .tt-by .role{color:var(--ink-45);font-size:.92em;}
+.s-title .tt-rule{width:64px;height:4px;background:var(--jade);margin:34px 0 0;}
+
+/* ===================== VS CARDS (searchable/askable) ===================== */
+.vs{position:absolute;left:80px;right:80px;top:300px;display:grid;grid-template-columns:1fr 60px 1fr;
+  align-items:center;gap:0;}
+.vs-card{background:var(--bg-1);border:1px solid var(--line);padding:28px 30px;}
+.vs-card.old{border-left:4px solid var(--ink-45);}
+.vs-card.new{border-left:4px solid var(--jade);}
+.vs-tag{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-45);margin-bottom:12px;}
+.vs-card.new .vs-tag{color:var(--jade-txt);}
+.vs-title{font-family:var(--serif);font-weight:700;font-size:32px;margin-bottom:14px;color:var(--ink);}
+.vs-body{font-family:var(--sans);font-size:17px;line-height:1.6;color:var(--ink-70);}
+.vs-arrow{text-align:center;color:var(--cinnabar);font-size:32px;font-family:var(--sans);}
+
+/* ===================== REFRAME (big statement) ===================== */
+.s-reframe .rf{position:absolute;left:80px;right:80px;top:200px;}
+.s-reframe .rf-line{font-family:var(--serif);font-weight:900;font-size:46px;line-height:1.25;letter-spacing:-.02em;color:var(--ink);}
+.s-reframe .rf-strike{color:var(--ink-45);text-decoration:line-through;text-decoration-color:var(--cinnabar);text-decoration-thickness:3px;}
+.s-reframe .rf-hl{color:var(--jade-txt);}
+.s-reframe .rf-sub{font-family:var(--sans);font-weight:300;font-size:19px;line-height:1.6;color:var(--ink-70);
+  margin-top:30px;max-width:900px;}
+.s-reframe .rf-sub b{color:var(--ink);font-weight:600;}
+
+/* ===================== 3 DIMS ===================== */
+.dims{position:absolute;left:80px;right:80px;top:320px;display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+.dim{background:var(--bg-1);border:1px solid var(--line);border-top:4px solid var(--jade);padding:26px 26px;
+  opacity:.35;transform:translateY(14px);transition:.45s;}
+.dim.on{opacity:1;transform:none;}
+.dim .dn{font-family:var(--mono);font-size:15px;color:var(--jade-txt);font-weight:700;}
+.dim .dt{font-family:var(--serif);font-weight:700;font-size:25px;margin:12px 0 10px;color:var(--ink);}
+.dim .db{font-family:var(--sans);font-size:16px;line-height:1.55;color:var(--ink-70);}
+
+/* ===================== CHUNKING (char vs meaning + real xml) ===================== */
+.ck-wrap{position:absolute;left:80px;right:80px;top:238px;bottom:96px;display:grid;
+  grid-template-columns:1fr 1fr;gap:30px;}
+.ck-mode{display:flex;gap:8px;margin-bottom:14px;}
+.ck-btn{font-family:var(--sans);font-size:14px;font-weight:500;cursor:pointer;background:transparent;
+  border:1px solid var(--line);border-radius:6px;padding:8px 16px;color:var(--ink-45);transition:.18s;}
+.ck-btn:hover{border-color:var(--jade);color:var(--ink);}
+.ck-btn.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.ck-track{display:flex;gap:5px;height:64px;background:var(--bg-1);border:1px solid var(--line);padding:12px;overflow:hidden;}
+.ck-cell{border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;
+  font-family:var(--mono);font-size:11px;transition:.4s;flex-shrink:0;overflow:hidden;white-space:nowrap;}
+.ck-note{font-family:var(--sans);font-size:14px;line-height:1.5;color:var(--ink-70);margin-top:10px;min-height:2.4em;}
+.ck-note b{color:var(--ink);font-weight:600;} .ck-note .bad{color:var(--cinnabar);font-weight:600;} .ck-note .good{color:var(--jade-txt);font-weight:600;}
+.ck-panel-lab{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-45);margin-bottom:10px;}
+.ck-panel-lab b{color:var(--jade-txt);}
+pre.xml{background:#181815;color:#E9E3D2;border-radius:8px;padding:12px 16px;font-family:var(--mono);
+  font-size:12px;line-height:1.55;overflow:auto;max-height:180px;border-left:3px solid var(--jade);}
+pre.xml .tag{color:#6FD3C9;} pre.xml .attr{color:#D9A066;} pre.xml .cmt{color:#867F6D;}
+pre.xml .cn{color:#F2ECDE;} pre.xml .xhl{background:rgba(31,157,148,.32);border-radius:3px;color:#fff;padding:0 .15em;}
+.ck-cards{display:flex;flex-direction:column;gap:12px;}
+.ck-card{background:var(--bg-1);border:1px solid var(--line);border-left:4px solid var(--jade);padding:10px 14px;}
+.ck-card .h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px;}
+.ck-card .ti{font-family:var(--sans);font-weight:600;font-size:16px;color:var(--ink);}
+.ck-card .ln{font-family:var(--mono);font-size:13px;color:var(--jade-txt);font-weight:700;white-space:nowrap;}
+.ck-card .bd{font-family:var(--serif);font-size:14px;color:var(--ink-70);line-height:1.4;}
+.ck-card .meta{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.pill{font-family:var(--mono);font-size:11px;background:var(--bg-sunk);color:var(--ink-45);padding:3px 9px;border-radius:20px;}
+.pill.d{color:var(--jade-txt);} .pill.s{color:var(--cinnabar);}
+.variance{background:var(--bg-1);border:1px solid var(--line);padding:10px 14px;margin-top:6px;}
+.vbar{display:flex;align-items:center;gap:12px;margin:4px 0;font-family:var(--sans);font-size:13px;}
+.vbar .vl{width:110px;flex:none;color:var(--ink-70);}
+.vbar .vt{flex:1;height:14px;background:var(--bg-sunk);border-radius:7px;overflow:hidden;}
+.vbar .vf{height:100%;background:linear-gradient(90deg,var(--jade),var(--jade-txt));border-radius:7px;}
+.vbar .vn{width:80px;flex:none;text-align:right;font-family:var(--mono);font-weight:700;color:var(--jade-txt);}
+
+/* ===================== ENCODER slide ===================== */
+.enc{position:absolute;left:80px;right:80px;top:250px;bottom:60px;display:grid;grid-template-columns:1.05fr 1fr;gap:48px;align-items:center;}
+.enc-vec{background:var(--bg-1);border:1px solid var(--line);border-radius:10px;padding:18px;position:relative;display:flex;align-items:center;justify-content:center;height:270px;flex:none;}
+.enc>div{display:flex;flex-direction:column;justify-content:center;}
+.enc>div:first-child .foot{position:static !important;left:0;right:0;margin-top:16px;}
+.enc-vec svg{width:100%;height:100%;display:block;}
+.enc-lab{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-45);margin-bottom:12px;}
+.enc-lab b{color:var(--jade-txt);}
+.enc-points{display:flex;flex-direction:column;gap:22px;}
+.enc-pt{display:flex;gap:14px;align-items:flex-start;}
+.enc-pt .k{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--jade-txt);width:120px;flex:none;
+  text-transform:uppercase;letter-spacing:.05em;padding-top:2px;}
+.enc-pt .v{font-family:var(--sans);font-size:17px;line-height:1.62;color:var(--ink-70);}
+.enc-pt .v b{color:var(--ink);font-weight:600;}
+.enc-callout{background:var(--jade);color:var(--jade-ink);padding:18px 22px;margin-top:22px;border-radius:10px;}
+.enc-callout .ct{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.8;margin-bottom:6px;}
+.enc-callout .cb{font-family:var(--serif);font-size:18px;line-height:1.5;font-weight:400;}
+.enc-callout .cb b{font-weight:700;}
+
+/* ===================== QUERY REWRITE ===================== */
+.qr{position:absolute;left:80px;right:80px;top:236px;bottom:100px;display:flex;flex-direction:column;
+  align-items:stretch;justify-content:center;gap:0;}
+.qr-step{background:var(--bg-1);border:1px solid var(--line);padding:14px 22px;width:100%;}
+.qr-step.q1{border-left:4px solid var(--ink-45);}
+.qr-step.q2{border-left:4px solid var(--gold);}
+.qr-step.q3{border-left:4px solid var(--jade);background:rgba(var(--rgb-jade),.07);}
+.qr-tag{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-45);margin-bottom:8px;}
+.qr-step.q3 .qr-tag{color:var(--jade-txt);}
+.qr-txt{font-family:var(--serif);font-size:19px;color:var(--ink);line-height:1.35;}
+.qr-txt i{color:var(--ink-70);}
+.qr-rules{display:flex;flex-direction:column;gap:6px;}
+.qr-rule{display:flex;gap:12px;align-items:baseline;font-family:var(--sans);font-size:16px;}
+.qr-rule .rk{font-family:var(--mono);font-size:12px;color:var(--gold);width:130px;flex:none;text-transform:uppercase;letter-spacing:.05em;}
+.qr-rule .rv{color:var(--ink-70);} .qr-rule .rv b{color:var(--ink);font-weight:600;}
+.qr-down{color:var(--jade);font-size:20px;margin:6px 0;text-align:center;}
+
+/* ===================== SCORE SIM ===================== */
+.sim{position:absolute;left:80px;right:80px;top:246px;bottom:96px;background:var(--bg-1);border:1px solid var(--line);padding:24px 32px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;}
+.sim-ex{font-family:var(--sans);font-size:16px;line-height:1.5;color:var(--ink-70);background:var(--paper);
+  border:1px dashed var(--line);border-radius:8px;padding:16px 20px;margin-bottom:18px;}
+.sim-ex b{color:var(--ink);font-weight:600;} .sim-ex .qq{color:var(--jade-txt);font-style:italic;font-family:var(--serif);}
+.sim-formula{font-family:var(--mono);font-weight:700;font-size:19px;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.sim-live{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:#fff;background:var(--jade);padding:3px 9px;border-radius:20px;text-transform:uppercase;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.sim-row{display:flex;align-items:center;gap:16px;margin:12px 0;font-family:var(--sans);font-size:16px;}
+.sim-row label{width:160px;flex:none;color:var(--ink-70);}
+.sim-row input[type=range]{flex:1;accent-color:var(--jade);}
+.sim-row .val{width:60px;flex:none;text-align:right;font-family:var(--mono);color:var(--jade-txt);font-weight:700;}
+.sim-hint{font-family:var(--mono);font-size:13px;color:var(--ink-45);margin:2px 0 8px;}
+.sim-chips{display:flex;flex-wrap:wrap;gap:11px;margin:16px 0;}
+.chip{font-family:var(--sans);font-size:15px;cursor:pointer;user-select:none;border:1px solid var(--line);
+  border-radius:14px;padding:9px 16px;color:var(--ink-70);transition:.15s;background:transparent;text-align:left;}
+.chip:hover{border-color:var(--jade);}
+.chip.on{background:var(--jade);color:#fff;border-color:var(--jade);}
+.chip .b{font-family:var(--mono);font-size:13px;opacity:.85;margin-left:8px;}
+.chip .why{display:block;font-size:12px;color:var(--ink-45);margin-top:2px;}
+.chip.on .why{color:rgba(255,255,255,.85);}
+.sim-out{margin-top:18px;padding-top:18px;border-top:1px dashed var(--line);display:flex;gap:36px;align-items:flex-end;flex-wrap:nowrap;}
+.metric .k{font-family:var(--mono);font-size:12px;color:var(--ink-45);letter-spacing:.06em;text-transform:uppercase;}
+.metric .v{font-family:var(--mono);font-weight:700;font-size:30px;color:var(--ink);}
+.metric.fin .v{color:var(--jade-txt);font-size:40px;}
+.sim-bar{flex:1;min-width:200px;height:14px;background:var(--bg-sunk);border-radius:7px;overflow:hidden;}
+.sim-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--jade),var(--jade-txt));width:0;transition:width .3s;}
+.sim-take{font-family:var(--sans);font-size:15px;color:var(--ink-70);margin-top:12px;line-height:1.45;}
+.sim-take b{color:var(--cinnabar);font-weight:600;}
+
+/* ===================== FEEDBACK LOOP ===================== */
+.loop{position:absolute;left:80px;right:80px;top:280px;bottom:120px;display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center;}
+.loop p.lead{font-family:var(--sans);font-size:19px;line-height:1.65;color:var(--ink-70);}
+.loop p.lead b{color:var(--ink);font-weight:600;} .loop p.lead i{color:var(--jade-txt);font-style:italic;}
+.loop svg{width:100%;height:auto;}
+.loop-node .lt{font-family:var(--sans);font-weight:600;} .loop-node .ls{font-family:var(--mono);}
+
+/* ===================== ARCH (ask sillok) ===================== */
+.arch{position:absolute;left:80px;right:80px;top:330px;display:flex;align-items:stretch;gap:8px;justify-content:center;}
+.arch-n{background:var(--bg-1);border:1px solid var(--line);border-radius:10px;padding:16px 18px;text-align:center;min-width:130px;display:flex;flex-direction:column;justify-content:center;}
+.arch-n.hi{border-color:var(--jade);border-width:2px;background:rgba(var(--rgb-jade),.07);}
+.arch-n .an{font-family:var(--sans);font-weight:600;font-size:17px;color:var(--ink);}
+.arch-n .as{font-family:var(--mono);font-size:12px;color:var(--ink-45);margin-top:4px;}
+.arch-arrow{display:flex;align-items:center;color:var(--ink-45);font-size:20px;}
+
+/* ===================== PIPELINE ===================== */
+.pipe-tools{position:absolute;left:80px;top:262px;display:flex;gap:12px;align-items:center;}
+.pbtn{font-family:var(--sans);font-weight:500;font-size:15px;cursor:pointer;background:var(--ink);color:var(--paper);
+  border:1px solid var(--ink);border-radius:8px;padding:9px 18px;transition:.18s;}
+.pbtn:hover{background:var(--jade);border-color:var(--jade);}
+.pbtn.ghost{background:transparent;color:var(--ink-70);border-color:var(--line);}
+.pbtn.ghost:hover{border-color:var(--jade);color:var(--ink);background:transparent;}
+.pipe-hint{font-family:var(--mono);font-size:13px;color:var(--ink-45);}
+.pipe{position:absolute;left:80px;right:80px;top:316px;bottom:56px;display:grid;grid-template-columns:1fr 300px;gap:26px;}
+.pipe-svg-wrap{background:var(--bg-1);border:1px solid var(--line);border-radius:12px;padding:10px;overflow:hidden;}
+#pipeSvg{width:100%;height:100%;display:block;}
+.pinfo{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--jade);border-radius:0 12px 12px 0;padding:20px 22px;}
+.pinfo .pt{font-family:var(--serif);font-weight:700;font-size:20px;color:var(--ink);margin-bottom:8px;}
+.pinfo .pb{font-family:var(--sans);font-size:15px;line-height:1.55;color:var(--ink-70);}
+.pinfo .pb code{font-family:var(--mono);font-size:.9em;color:var(--cinnabar);background:var(--bg-sunk);padding:.1em .3em;border-radius:4px;}
+.pinfo .ppath{display:inline-block;font-family:var(--mono);font-size:12px;padding:3px 10px;border-radius:20px;margin-bottom:10px;
+  background:rgba(var(--rgb-jade),.15);color:var(--jade-txt);}
+.fnode rect{fill:var(--bg-1);stroke:var(--line);stroke-width:1.5;transition:.2s;cursor:pointer;}
+.fnode .nt{fill:var(--ink);font-family:var(--sans);font-weight:600;font-size:15px;text-anchor:middle;pointer-events:none;}
+.fnode .ns{fill:var(--ink-45);font-family:var(--mono);font-size:11px;text-anchor:middle;pointer-events:none;}
+.fnode:hover rect{stroke:var(--jade);stroke-width:2.4;}
+.fnode.out rect{fill:var(--ink);} .fnode.out .nt{fill:var(--paper);} .fnode.out .ns{fill:var(--ink-30);}
+.fnode.ds rect{fill:var(--jade);stroke:var(--jade);} .fnode.ds .nt{fill:#fff;} .fnode.ds .ns{fill:rgba(255,255,255,.85);}
+.fnode.flow-active rect{stroke:var(--jade);stroke-width:3;filter:drop-shadow(0 0 8px rgba(31,157,148,.5));}
+.pedge{stroke:var(--ink-45);opacity:.4;stroke-width:2;fill:none;}
+.pedge.flow-lit{opacity:1;stroke-width:3;stroke:var(--jade);}
+.packet{fill:var(--jade);filter:drop-shadow(0 0 6px rgba(31,157,148,.7));}
+
+/* ===================== PROVENANCE ===================== */
+.prov{position:absolute;left:80px;right:80px;top:340px;display:flex;gap:8px;align-items:stretch;}
+.prov-s{background:var(--bg-1);border:1px solid var(--line);border-radius:10px;padding:18px 20px;flex:1;}
+.prov-s:last-child{background:var(--ink);}
+.prov-s .t{font-family:var(--sans);font-weight:600;font-size:18px;color:var(--ink);}
+.prov-s:last-child .t{color:var(--paper);}
+.prov-s .s{font-family:var(--mono);font-size:12px;color:var(--ink-45);margin-top:4px;}
+.prov-s:last-child .s{color:var(--ink-30);}
+.prov-arrow{display:flex;align-items:center;color:var(--jade);font-size:22px;}
+
+/* ===================== FINAL + QR ===================== */
+.final{position:absolute;left:80px;right:80px;top:170px;bottom:60px;display:flex;flex-direction:row;gap:70px;align-items:center;justify-content:space-between;}
+.final>.final-text{flex:1 1 auto;min-width:0;}
+.final>.qr-card{flex:0 0 300px;}
+.take{list-style:none;}
+.take li{font-family:var(--sans);font-weight:300;font-size:22px;line-height:1.5;color:var(--ink-70);
+  padding:12px 0 12px 28px;position:relative;}
+.take li::before{content:"—";position:absolute;left:0;color:var(--jade);font-weight:700;}
+.take li b{color:var(--ink);font-weight:600;} .take li .jade{color:var(--jade-txt);}
+.qr-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.12);width:300px;}
+.qr-card svg.qrcode{width:236px;height:236px;display:block;margin:0 auto;}
+.qr-url{font-family:var(--mono);font-size:16px;color:#20201C;margin-top:14px;font-weight:500;}
+.qr-lab{font-family:var(--sans);font-size:13px;color:#867F6D;margin-top:4px;}
+
+/* reframe (split) */
+.s-reframe .rf{position:absolute;left:80px;right:80px;top:300px;}
+.rf-big{font-family:var(--serif);font-weight:900;font-size:44px;line-height:1.2;color:var(--ink);letter-spacing:-.02em;}
+.rf-wrong{color:var(--cinnabar);}
+.rf-strike{color:var(--ink-45);text-decoration:line-through;text-decoration-color:var(--cinnabar);text-decoration-thickness:3px;}
+.rf-hl{color:var(--jade-txt);}
+.rf-sub{font-family:var(--sans);font-weight:300;font-size:19px;line-height:1.6;color:var(--ink-70);max-width:960px;}
+.rf-sub b{color:var(--ink);font-weight:600;}
+.s-reframe2 .rf2{position:absolute;left:80px;right:80px;top:320px;}
+.rf2-line{font-family:var(--serif);font-size:26px;line-height:1.5;color:var(--ink-70);margin-bottom:8px;}
+.rf2-line b{color:var(--ink);font-weight:700;}
+.rf2-k{font-family:var(--sans);font-weight:700;font-size:14px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-45);margin-right:14px;display:inline-block;width:52px;}
+.rf2-k.on{color:var(--jade-txt);}
+
+/* chunking strategy slide (S5a) */
+.ck2{position:absolute;left:80px;right:80px;top:250px;bottom:120px;display:grid;grid-template-columns:1.25fr 1fr;gap:44px;align-items:start;}
+.ck2-left{display:flex;flex-direction:column;}
+.ck2 .ck-track{height:104px;margin-top:4px;}
+.ck2 .ck-note{font-size:17px;line-height:1.6;margin-top:18px;min-height:3.2em;}
+.ck2-right{display:flex;flex-direction:column;justify-content:center;height:100%;}
+.ck2 .variance{padding:20px 22px;}
+.ck2 .vbar{margin:8px 0;font-size:15px;}
+.ck-var-note{font-family:var(--sans);font-size:15px;line-height:1.55;color:var(--ink-70);margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);}
+.ck-var-note b{color:var(--cinnabar);font-weight:600;}
+/* real xml slide (S5b) */
+.xml2{position:absolute;left:80px;right:80px;top:250px;bottom:70px;display:grid;grid-template-columns:1.15fr 1fr;gap:40px;align-items:start;}
+.xml2-code pre.xml{max-height:none;font-size:14px;line-height:1.7;}
+.xml2-side{display:flex;flex-direction:column;gap:14px;}
+.xml2-note{font-family:var(--sans);font-size:16px;line-height:1.6;color:var(--ink-70);margin-top:2px;padding-top:14px;border-top:1px dashed var(--line);}
+.xml2-note b{color:var(--ink);font-weight:600;}
+
+/* scoring payoff slide (S8b) */
+.simb{position:absolute;left:80px;right:80px;top:280px;bottom:70px;display:flex;flex-direction:column;justify-content:center;gap:40px;}
+.simb-cols{display:grid;grid-template-columns:1fr auto 1fr;gap:40px;align-items:center;}
+.simb-card{border:1px solid var(--line);border-radius:14px;padding:30px 34px;text-align:center;}
+.simb-card.off{background:var(--bg-1);}
+.simb-card.on{background:rgba(var(--rgb-jade),.09);border-color:var(--jade);border-width:2px;}
+.simb-tag{font-family:var(--mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-45);margin-bottom:14px;}
+.simb-card.on .simb-tag{color:var(--jade-txt);}
+.simb-score{font-family:var(--mono);font-weight:700;font-size:64px;line-height:1;color:var(--ink);}
+.simb-card.on .simb-score{color:var(--jade-txt);}
+.simb-lab{font-family:var(--sans);font-size:15px;color:var(--ink-45);margin-top:12px;}
+.simb-rank{font-family:var(--sans);font-size:19px;color:var(--ink-70);margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);}
+.simb-rank b{font-family:var(--mono);color:var(--ink);font-size:22px;}
+.simb-card.on .simb-rank b{color:var(--jade-txt);}
+.simb-arrow{font-family:var(--sans);font-size:40px;color:var(--cinnabar);}
+.simb-take{font-family:var(--serif);font-size:24px;line-height:1.55;color:var(--ink-70);text-align:center;max-width:1000px;margin:0 auto;}
+.simb-take b{color:var(--ink);font-weight:700;} .simb-take .jade{color:var(--jade-txt);font-weight:700;}
+
+.sim-live-line{display:flex;align-items:center;gap:18px;margin-top:6px;}
+.sim-live-line .sll-lab{font-family:var(--mono);font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-45);}
+.sim-live-line .sll-val{font-family:var(--mono);font-weight:700;font-size:38px;color:var(--jade-txt);min-width:120px;}
+.sim-live-line .sim-bar{flex:1;}
+
+/* encoder — problem slide (S6a) */
+.enc1{position:absolute;left:80px;right:80px;top:256px;bottom:96px;display:grid;grid-template-columns:1.15fr 1fr;gap:48px;align-items:center;}
+.enc1-viz{display:flex;flex-direction:column;height:100%;justify-content:center;}
+.enc1-text{display:flex;flex-direction:column;justify-content:center;gap:22px;}
+.enc-vec-big{height:320px;}
+/* encoder — fix slide (S6b) */
+.enc2{position:absolute;left:80px;right:80px;top:256px;bottom:64px;display:grid;grid-template-columns:1fr 1.1fr;gap:48px;align-items:center;}
+.enc2-viz{display:flex;flex-direction:column;height:100%;justify-content:center;}
+.enc2-text{display:flex;flex-direction:column;justify-content:center;gap:20px;}
+/* shared: bigger point rows on the split slides */
+.enc-pt.big .k{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--jade-txt);width:130px;flex:none;text-transform:uppercase;letter-spacing:.05em;padding-top:3px;}
+.enc-pt.big .v{font-family:var(--sans);font-size:18px;line-height:1.6;color:var(--ink-70);}
+.enc-pt.big .v b{color:var(--ink);font-weight:600;}
+.enc-callout.jade{background:var(--jade);}
+
+/* ===== page jump menu ===== */
+.pagenum{cursor:pointer;transition:color .2s ease;}
+.pagenum:hover{color:var(--jade-txt);}
+.jump{position:fixed;inset:0;z-index:200;display:none;
+  background:rgba(var(--rgb-surf),.86);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;}
+.jump.on{display:flex;}
+.jump-box{width:600px;max-height:78vh;overflow-y:auto;
+  background:var(--paper);border:1px solid var(--line);border-radius:12px;
+  padding:26px 28px 22px;box-shadow:0 24px 70px rgba(0,0,0,.28);}
+.jump-h{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.26em;
+  text-transform:uppercase;color:var(--ink-45);
+  padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;}
+.jump-x{font-family:var(--mono);font-size:11px;color:var(--ink-30);letter-spacing:.08em;}
+.ji{display:flex;align-items:baseline;gap:16px;padding:9px 12px;border-radius:6px;
+  cursor:pointer;border-left:2px solid transparent;transition:all .15s ease;}
+.ji:hover{background:var(--bg-1);border-left-color:var(--jade);}
+.ji.cur{background:rgba(var(--rgb-jade),.1);border-left-color:var(--jade);}
+.ji-n{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.06em;
+  color:var(--ink-45);min-width:26px;}
+.ji:hover .ji-n,.ji.cur .ji-n{color:var(--jade-txt);}
+.ji-t{font-family:var(--serif);font-size:16px;font-weight:600;color:var(--ink-70);}
+.ji:hover .ji-t,.ji.cur .ji-t{color:var(--ink);}
+@media print{.jump{display:none !important;}}
+
+/* p.5 length-variance scale */
+.vscale{display:flex;flex-direction:column;gap:14px;margin:6px 0 2px;}
+.vrow{display:grid;grid-template-columns:88px auto auto 1fr;align-items:center;gap:10px;}
+.vrow .vlab{font-family:var(--sans);font-size:14px;color:var(--ink-70);}
+.vrow .vcount{font-family:var(--mono);font-weight:700;font-size:20px;color:var(--jade-txt);text-align:right;}
+.vrow .vunit{font-family:var(--sans);font-size:12px;color:var(--ink-45);}
+.vrow .vcells{display:flex;flex-wrap:wrap;gap:3px;align-content:center;}
+.vrow .vcells i{width:9px;height:9px;border-radius:2px;background:var(--jade);opacity:.85;display:block;}
+.vrow.big .vcells i{opacity:.9;}
+.vrow.big .vcount{font-size:22px;}
+.vrow .vcells.many{max-width:100%;}
+/* team credits (Ask Sillok slide) */
+.credits{position:absolute;left:80px;right:80px;bottom:28px;font-family:var(--sans);font-size:14px;
+  line-height:1.5;color:var(--ink-45);padding-top:14px;border-top:1px solid var(--line-faint);}
+.credits b{color:var(--ink-70);font-weight:600;}
+.tt-by .tt-email{font-family:var(--mono);font-size:14px;color:var(--jade-txt);letter-spacing:.02em;}</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+<div class="progress" id="progress"></div>
+
+<!-- global nav -->
+<div class="nav">
+  <button class="nav-b nav-theme" id="navTheme" title="Theme (T)"><span class="th-dark">☾ Dark</span><span class="th-light">☀ Light</span></button>
+  <button class="nav-b" id="navPrev" title="Prev (←)"><svg viewBox="0 0 16 16"><path d="M10 2.5 L4.5 8 L10 13.5"/></svg></button>
+  <button class="nav-b" id="navNext" title="Next (→)"><svg viewBox="0 0 16 16"><path d="M6 2.5 L11.5 8 L6 13.5"/></svg></button>
+</div>
+
+<!-- ============ S1 TITLE ============ -->
+<section class="slide s-title active" data-steps="1">
+  <div class="tt-wrap">
+    <div class="tt-seal">SILLOK</div>
+    <div class="tt-eyebrow">DH2026 · Daejeon · Short Paper</div>
+    <h1>From Searchable Archives<br>to Askable Archives</h1>
+    <div class="tt-sub">Designing a RAG-Based Research Interface for<br>The Annals of the Joseon Dynasty</div>
+    <div class="tt-rule"></div>
+    <div class="tt-by"><b>Kunha Kim</b><br><span class="role">Institute for Digital History, Sogang University</span><br><span class="tt-email">littlekg87@gmail.com</span></div>
+  </div>
+</section>
+
+<!-- ============ S2 PROBLEM ============ -->
+<section class="slide s-problem" data-steps="1">
+  <div class="masthead"><span class="eyebrow">The Problem</span><span class="num">01 / Motivation</span></div>
+  <div class="hl">
+    <div class="q">Searchable ≠ Askable</div>
+    <h1 class="med">The Annals are already digital.<br>So why is this still hard?</h1>
+  </div>
+  <div class="vs">
+    <div class="vs-card old">
+      <div class="vs-tag">What we have</div>
+      <div class="vs-title">Searchable</div>
+      <div class="vs-body">Find a record — but only if you already know the name, the place, or the exact word.</div>
+    </div>
+    <div class="vs-arrow">→</div>
+    <div class="vs-card new">
+      <div class="vs-tag">What we want</div>
+      <div class="vs-title">Askable</div>
+      <div class="vs-body">Ask in plain language — and find records you did not know to look for.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ S3a THE COMMON QUESTION ============ -->
+<section class="slide s-reframe" data-steps="1">
+  <div class="masthead"><span class="eyebrow">Reframing · 1 of 2</span><span class="num">02 / A Common Mistake</span></div>
+  <div class="hl"><div class="q">The question everyone asks first</div><h1 class="med">"Which AI model is best?"</h1></div>
+  <div class="rf">
+    <div class="rf-big">This is the <span class="rf-wrong">wrong</span> question.</div>
+    <div class="rf-sub" style="margin-top:26px">Reaching for a bigger model treats RAG as a black box that gets smarter on its own. But on the Annals, a better model does <b>not</b> fix a missing source, a badly cut chunk, or an encoder that cannot read old Korean. Those are set <b>before the model runs</b>.</div>
+  </div>
+</section>
+
+<!-- ============ S3b THE RIGHT FRAME ============ -->
+<section class="slide s-reframe2" data-steps="1">
+  <div class="masthead"><span class="eyebrow">Reframing · 2 of 2</span><span class="num">03 / The Right Frame</span></div>
+  <div class="hl"><div class="q">A better question to ask</div><h1 class="med">RAG is not an analysis tool.<br>It is a <span class="rf-hl">research interface</span>.</h1></div>
+  <div class="rf2">
+    <div class="rf2-line"><span class="rf2-k">not</span> a machine that produces answers you accept.</div>
+    <div class="rf2-line"><span class="rf2-k on">but</span> an environment that helps you <b>find, compare, and return to sources</b>.</div>
+    <div class="rf-sub" style="margin-top:30px">So whether RAG works on the Annals depends far less on the model —<br>and far more on the <b>design choices we make before the model ever runs</b>:<br>how we prepare the data, how we retrieve, and how we check the result.</div>
+  </div>
+</section>
+
+<!-- ============ S4 THREE DIMS ============ -->
+<section class="slide s-dims" data-steps="4">
+  <div class="masthead"><span class="eyebrow">A Framework</span><span class="num">04 / Three Considerations</span></div>
+  <div class="hl"><div class="q">What actually needs a decision?</div><h1 class="med">Building a RAG for the Annals</h1></div>
+  <div class="dims">
+    <div class="dim" data-focus="1"><div class="dn">01</div><div class="dt">Source Foundation</div><div class="db">What goes in, how it is chunked, and how every piece can be traced back to the original text.</div></div>
+    <div class="dim" data-focus="2"><div class="dn">02</div><div class="dt">Procedural Auditability</div><div class="db">How the system chooses and rejects sources — and whether we can see and check that path.</div></div>
+    <div class="dim" data-focus="3"><div class="dn">03</div><div class="dt">Evaluative Feedback</div><div class="db">How a historian judges the result, and how that judgment loops back to fix the design.</div></div>
+  </div>
+</section>
+
+<!-- ============ S5a CHUNKING STRATEGY ============ -->
+<section class="slide s-chunk" data-steps="1">
+  <div class="masthead"><span class="eyebrow"><span class="rstage">①</span> Source Foundation</span><span class="num">05 / Chunking</span></div>
+  <div class="hl"><div class="q">The chunk is a design decision</div><h1 class="med">Cut by characters, or by meaning?</h1></div>
+  <div class="ck2">
+    <div class="ck2-left">
+      <div class="ck-mode">
+        <button class="ck-btn on" data-mode="char">By fixed length</button>
+        <button class="ck-btn" data-mode="entry">By meaning (annal entry)</button>
+      </div>
+      <div class="ck-track" id="ckTrack"></div>
+      <div class="ck-note" id="ckNote"></div>
+    </div>
+    <div class="ck2-right">
+      <div class="variance">
+        <div class="ck-panel-lab">How long is one entry? · one book, 308 entries</div>
+        <div class="vscale">
+          <div class="vrow">
+            <span class="vlab">shortest</span>
+            <span class="vcount">6</span>
+            <span class="vunit">characters</span>
+            <span class="vcells" data-n="1"><i></i></span>
+          </div>
+          <div class="vrow">
+            <span class="vlab">median</span>
+            <span class="vcount">33</span>
+            <span class="vunit">characters</span>
+            <span class="vcells" data-n="5"><i></i><i></i><i></i><i></i><i></i></span>
+          </div>
+          <div class="vrow big">
+            <span class="vlab">longest</span>
+            <span class="vcount">2,150</span>
+            <span class="vunit">characters</span>
+            <span class="vcells many"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          </div>
+        </div>
+        <div class="ck-var-note">Each block ≈ one median entry. The longest entry is <b>over 350×</b> the shortest — one fixed chunk size cannot fit both.</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">There is no single correct rule — the chunk boundary is a decision the historian makes, and it changes what can be found. <b>See the real file next →</b></div>
+</section>
+
+<!-- ============ S5b REAL XML ============ -->
+<section class="slide s-xml" data-steps="1">
+  <div class="masthead"><span class="eyebrow"><span class="rstage">①</span> Source Foundation</span><span class="num">06 / The Real Source</span></div>
+  <div class="hl"><div class="q">One annal entry, exactly as it ships</div><h1 class="med">The XML already marks the meaning unit</h1></div>
+  <div class="xml2">
+    <div class="xml2-code">
+      <div class="ck-panel-lab">Real source · <b>one <code>&lt;level5&gt;</code> entry from the file</b></div>
+      <pre class="xml"><span class="cmt">&lt;!-- Taejo Sillok, year 4 · 1395-06-13 --&gt;</span>
+<span class="tag">&lt;level5</span> <span class="attr">id=</span><span class="cn">"waa_10406013_003"</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;biblioData&gt;</span>
+    <span class="tag">&lt;mainTitle&gt;</span><span class="cn">Venus seen in daylight</span><span class="tag">&lt;/mainTitle&gt;</span>
+    <span class="tag">&lt;date</span> <span class="attr">date=</span><span class="cn">"1395-06-13"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;source&gt;</span><span class="cn">Taejo Sillok, bk 2 · vol 7</span><span class="tag">&lt;/source&gt;</span>
+    <span class="tag">&lt;page</span> <span class="attr">begin=</span><span class="cn">"leaf 13B"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;subjectClass&gt;</span><span class="cn">science · astronomy</span><span class="tag">&lt;/subjectClass&gt;</span>
+  <span class="tag">&lt;/biblioData&gt;</span>
+  <span class="tag">&lt;text&gt;&lt;content&gt;</span>
+    <span class="tag">&lt;paragraph&gt;</span><span class="xhl">○太白晝見。</span><span class="tag">&lt;/paragraph&gt;</span>
+  <span class="tag">&lt;/content&gt;&lt;/text&gt;</span>
+<span class="tag">&lt;/level5&gt;</span></pre>
+    </div>
+    <div class="xml2-side">
+      <div class="ck-panel-lab">The same entry, as a retrievable chunk</div>
+      <div class="ck-card">
+        <div class="h"><span class="ti">"Venus seen in daylight"</span><span class="ln">6 ch</span></div>
+        <div class="bd">○太白晝見。</div>
+        <div class="meta"><span class="pill d">1395-06-13</span><span class="pill s">astronomy</span><span class="pill">bk 7 · 13B</span></div>
+      </div>
+      <div class="ck-card">
+        <div class="h"><span class="ti">"Naming the palace halls"</span><span class="ln">2,150 ch</span></div>
+        <div class="bd">○命判三司事鄭道傳, 名新宮諸殿… <span style="color:var(--ink-30)">[2,000+ more]</span></div>
+        <div class="meta"><span class="pill d">1395-10-07</span><span class="pill s">architecture</span><span class="pill">bk 8</span></div>
+      </div>
+      <div class="xml2-note">Every tag becomes <b>metadata</b> — the id, date, source, page, and subject travel with the text. That is what lets a retrieved chunk be <b>traced back</b> to its place in the original.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ S6a ENCODER — the problem ============ -->
+<section class="slide s-enc" data-steps="1">
+  <div class="masthead"><span class="eyebrow"><span class="rstage">①</span> Source Foundation</span><span class="num">07 / The Encoder</span></div>
+  <div class="hl"><div class="q">The model that turns text into vectors</div><h1 class="med">A general encoder does not know old Korean</h1></div>
+  <div class="enc1">
+    <div class="enc1-viz">
+      <div class="enc-lab">Why a <b>general</b> encoder struggles</div>
+      <div class="enc-vec enc-vec-big">
+        <svg viewBox="10 20 380 175" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+          <line x1="30" y1="180" x2="380" y2="180" stroke="var(--line)" stroke-width="1"/>
+          <line x1="30" y1="180" x2="30" y2="20" stroke="var(--line)" stroke-width="1"/>
+          <circle cx="90" cy="55" r="10" fill="var(--cinnabar)"/>
+          <text x="90" y="40" font-family="var(--sans)" font-size="13" fill="var(--ink-70)" text-anchor="middle">modern query</text>
+          <circle cx="325" cy="140" r="10" fill="var(--ink-45)"/>
+          <text x="325" y="125" font-family="var(--sans)" font-size="13" fill="var(--ink-70)" text-anchor="middle">推刷都監 (原文)</text>
+          <line x1="100" y1="61" x2="315" y2="134" stroke="var(--cinnabar)" stroke-width="1.5" stroke-dasharray="5 4" opacity=".6"/>
+          <text x="208" y="88" font-family="var(--mono)" font-size="13" fill="var(--cinnabar)" text-anchor="middle">far apart</text>
+        </svg>
+      </div>
+    </div>
+    <div class="enc1-text">
+      <div class="enc-pt big"><span class="k">the problem</span><span class="v">General encoders learn <b>modern language</b>. In the Annals, the same person, place, or office is written differently across periods and sources — and a modern question rarely shares words with the classical record.</span></div>
+      <div class="enc-callout">
+        <div class="ct">what this means</div>
+        <div class="cb">Classical Chinese, idu, and archaic names sit <b>far from a modern query</b> in a general encoder's vector space. The right record can be there — and still never surface.</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">Distance in the model is not the same as historical relevance. <b>So how do we fix it? →</b></div>
+</section>
+
+<!-- ============ S6b ENCODER — the fix ============ -->
+<section class="slide s-enc2" data-steps="1">
+  <div class="masthead"><span class="eyebrow"><span class="rstage">①</span> Source Foundation</span><span class="num">08 / The Encoder</span></div>
+  <div class="hl"><div class="q">Teaching the model what "similar" means</div><h1 class="med">Fine-tune it — and the historian decides</h1></div>
+  <div class="enc2">
+    <div class="enc2-viz">
+      <div class="enc-lab"><b>After</b> fine-tuning on historical sources</div>
+      <div class="enc-vec enc-vec-big">
+        <svg viewBox="10 20 380 175" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+          <line x1="30" y1="180" x2="380" y2="180" stroke="var(--line)" stroke-width="1"/>
+          <line x1="30" y1="180" x2="30" y2="20" stroke="var(--line)" stroke-width="1"/>
+          <circle cx="90" cy="55" r="10" fill="var(--cinnabar)"/>
+          <text x="90" y="40" font-family="var(--sans)" font-size="13" fill="var(--ink-70)" text-anchor="middle">modern query</text>
+          <circle cx="325" cy="140" r="10" fill="var(--ink-45)" opacity=".5"/>
+          <text x="325" y="125" font-family="var(--sans)" font-size="13" fill="var(--ink-45)" text-anchor="middle">推刷都監 (原文)</text>
+          <circle cx="150" cy="92" r="10" fill="var(--jade)"/>
+          <text x="150" y="116" font-family="var(--sans)" font-size="13" fill="var(--jade-txt)" text-anchor="middle">pulled close</text>
+          <line x1="315" y1="135" x2="162" y2="96" stroke="var(--jade)" stroke-width="1.8" stroke-dasharray="4 3"/>
+          <line x1="100" y1="60" x2="140" y2="86" stroke="var(--jade)" stroke-width="1.5" opacity=".5"/>
+        </svg>
+      </div>
+    </div>
+    <div class="enc2-text">
+      <div class="enc-pt big"><span class="k">the fix</span><span class="v"><b>Fine-tune</b> the encoder on historical sources. One study trained on the Annals + Seungjeongwon Ilgi, then retrieved related records that shared <b>no words</b> with the query.</span></div>
+      <div class="enc-pt big"><span class="k">key distinction</span><span class="v">Storing text in a vector DB is <b>not</b> the same as training the encoder. The DB just fills up; the encoder's sense of "similar" does not change.</span></div>
+      <div class="enc-callout jade">
+        <div class="ct">The historian's role</div>
+        <div class="cb">You decide <b>which historical relations count as "similar"</b> — an alias, a variant spelling, a changed institution. The encoder measures distance; it does not settle relevance.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ S7 QUERY REWRITE ============ -->
+<section class="slide s-qr" data-steps="1">
+  <div class="masthead"><span class="eyebrow"><span class="rstage">②</span> Procedural Auditability</span><span class="num">09 / Query Rewriting</span></div>
+  <div class="hl"><div class="q">The system rewrites your question</div><h1 class="med">You should be able to see how</h1></div>
+  <div class="qr">
+    <div class="qr-step q1" data-focus="1"><div class="qr-tag">1 · what the user types</div><div class="qr-txt">"Was there an office to hunt down <i>escaped slaves</i> under King Hyojong?"</div></div>
+    <div class="qr-down">↓</div>
+    <div class="qr-step q2" data-focus="2"><div class="qr-tag">2 · checked against known rules</div>
+      <div class="qr-rules">
+        <div class="qr-rule"><span class="rk">expand term</span><span class="rv">escaped slaves → <b>推刷 · office that recovered runaways</b></span></div>
+        <div class="qr-rule"><span class="rk">alias / variant</span><span class="rv">the office → <b>推刷都監 (Chuswae-dogam)</b></span></div>
+        <div class="qr-rule"><span class="rk">estimate period</span><span class="rv">King Hyojong → <b>reign 1649–1659</b></span></div>
+      </div>
+    </div>
+    <div class="qr-down">↓</div>
+    <div class="qr-step q3" data-focus="3"><div class="qr-tag">3 · rewritten query sent to search</div><div class="qr-txt"><i>"Records on the 推刷都監 that recovered escaped slaves, active in the reign of King Hyojong (1649–1659)."</i></div></div>
+  </div>
+  <div class="foot"><b>The point:</b> rewriting quietly includes and excludes records. If the added terms, aliases, and date filters are <b>logged</b>, a historian can check what the system decided — and why a record was found or missed.</div>
+</section>
+
+<!-- ============ S8a SCORE SIM — controls ============ -->
+<section class="slide s-sim" data-steps="1">
+  <div class="masthead"><span class="eyebrow"><span class="rstage">②</span> Live · Retrieval is a design choice</span><span class="num">10 / Scoring</span></div>
+  <div class="hl"><div class="q">Same distance, different rank</div><h1 class="med">Turn on the signals, watch the score</h1></div>
+  <div class="sim">
+    <div class="sim-ex">Question: <span class="qq">"Did the Chuswae-dogam send inspectors under King Hyojong?"</span> · A candidate record matches the <b>office name</b>, the <b>reign</b>, and the <b>date range</b>. Toggle those signals below.</div>
+    <div class="sim-formula">final_score = semantic_score + Σ bonus <span class="sim-live">live</span></div>
+    <div class="sim-row"><label>vector distance</label><input type="range" id="simDist" min="0" max="0.9" step="0.01" value="0.22"><span class="val" id="simDistV">0.22</span></div>
+    <div class="sim-hint">semantic_score = 1 − distance · the embedding is fixed; only the structured bonuses change</div>
+    <div class="sim-chips" id="simChips"></div>
+    <div class="sim-live-line">
+      <span class="sll-lab">live final_score</span>
+      <span class="sll-val" id="outFinal">0.78</span>
+      <div class="sim-bar"><i id="outBar"></i></div>
+    </div>
+    <!-- hidden metric holders so the JS can update without layout cost -->
+    <span id="outSem" style="display:none"></span><span id="outBonus" style="display:none"></span>
+  </div>
+  <div class="foot">Each chip is a structured, historical signal the retriever can weigh. <b>See what it does to the ranking next →</b></div>
+</section>
+
+<!-- ============ S8b SCORE SIM — the payoff ============ -->
+<section class="slide s-simb" data-steps="1">
+  <div class="masthead"><span class="eyebrow"><span class="rstage">②</span> Live · Retrieval is a design choice</span><span class="num">11 / Scoring</span></div>
+  <div class="hl"><div class="q">The model never moved — the design did</div><h1 class="med">Same embedding, different rank</h1></div>
+  <div class="simb">
+    <div class="simb-cols">
+      <div class="simb-card off">
+        <div class="simb-tag">semantic only</div>
+        <div class="simb-score">0.78</div>
+        <div class="simb-lab">vector distance alone</div>
+        <div class="simb-rank">ranked <b>#7</b> of candidates</div>
+      </div>
+      <div class="simb-arrow">→</div>
+      <div class="simb-card on">
+        <div class="simb-tag">+ structured signals</div>
+        <div class="simb-score">1.65</div>
+        <div class="simb-lab">office name · reign · date range</div>
+        <div class="simb-rank">ranked <b>#1</b> of candidates</div>
+      </div>
+    </div>
+    <div class="simb-take">
+      The <b>embedding</b> never moved. The <b>distance</b> never moved. But once structured, historical signals entered the score, the right record rose from the middle of the pile to the top. The <span class="jade">design</span> did the work — not the model.
+    </div>
+  </div>
+</section>
+
+<!-- ============ S9 FEEDBACK LOOP ============ -->
+<section class="slide s-loop" data-steps="1">
+  <div class="masthead"><span class="eyebrow"><span class="rstage">③</span> Evaluative Feedback</span><span class="num">12 / Human-in-the-loop</span></div>
+  <div class="hl"><div class="q">Evaluation is the start of the next run</div><h1 class="med">The historian is not the user — the designer</h1></div>
+  <div class="loop">
+    <p class="lead">Score retrieval and generation <b>separately</b> — so you know which stage failed. But a number cannot tell you if a source was the <i>right kind of evidence</i>. That judgment is historical, and it must <b>loop back</b> into the data, the retrieval, and the prompt.</p>
+    <svg viewBox="0 0 400 380" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="larr" markerWidth="10" markerHeight="10" refX="5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="var(--jade)"/></marker></defs>
+      <!-- rotating dashed ring (continuous motion) -->
+      <circle cx="200" cy="190" r="140" fill="none" stroke="var(--jade)" stroke-width="1.5" stroke-dasharray="6 10" opacity="0.32">
+        <animateTransform attributeName="transform" type="rotate" from="0 200 190" to="360 200 190" dur="14s" repeatCount="indefinite"/>
+      </circle>
+      <g fill="none" stroke="var(--jade)" stroke-width="2.5" marker-end="url(#larr)">
+        <path d="M250,62 A140,140 0 0 1 328,148"/>
+        <path d="M328,232 A140,140 0 0 1 250,318"/>
+        <path d="M150,318 A140,140 0 0 1 72,232"/>
+        <path d="M72,148 A140,140 0 0 1 150,62"/>
+      </g>
+      <!-- traveling packet that circulates the loop -->
+      <circle r="6" fill="var(--jade)">
+        <animateMotion dur="6s" repeatCount="indefinite" rotate="auto"
+          path="M200,50 A140,140 0 0 1 340,190 A140,140 0 0 1 200,330 A140,140 0 0 1 60,190 A140,140 0 0 1 200,50 Z"/>
+        <animate attributeName="opacity" values="0;1;1;1;0.6;1" dur="6s" repeatCount="indefinite"/>
+      </circle>
+      <g class="loop-node">
+        <rect x="118" y="14" width="164" height="58" rx="12" fill="var(--bg-1)" stroke="var(--jade)" stroke-width="1.5"/>
+        <text class="lt" x="200" y="39" text-anchor="middle" font-size="15" fill="var(--ink)">Historian sets</text>
+        <text class="ls" x="200" y="58" text-anchor="middle" font-size="11" fill="var(--ink-45)">questions + criteria</text>
+      </g>
+      <g class="loop-node">
+        <rect x="286" y="158" width="112" height="62" rx="12" fill="var(--bg-1)" stroke="var(--line)" stroke-width="1.5"/>
+        <text class="lt" x="342" y="184" text-anchor="middle" font-size="15" fill="var(--ink)">RAG runs</text>
+        <text class="ls" x="342" y="203" text-anchor="middle" font-size="8.5" fill="var(--ink-45)">retrieve+generate</text>
+      </g>
+      <g class="loop-node">
+        <rect x="118" y="308" width="164" height="58" rx="12" fill="var(--ink)"/>
+        <text class="lt" x="200" y="333" text-anchor="middle" font-size="15" fill="var(--paper)">Judge the evidence</text>
+        <text class="ls" x="200" y="352" text-anchor="middle" font-size="11" fill="var(--ink-30)">context + relevance</text>
+      </g>
+      <g class="loop-node">
+        <rect x="2" y="158" width="112" height="62" rx="12" fill="var(--bg-1)" stroke="var(--cinnabar)" stroke-width="1.5"/>
+        <text class="lt" x="58" y="184" text-anchor="middle" font-size="15" fill="var(--ink)">Revise</text>
+        <text class="ls" x="58" y="203" text-anchor="middle" font-size="8.5" fill="var(--ink-45)">data·search·prompt</text>
+      </g>
+    </svg>
+  </div>
+</section>
+
+<!-- ============ S10 ARCH ============ -->
+<section class="slide s-arch" data-steps="1">
+  <div class="masthead"><span class="eyebrow">Putting it together</span><span class="num">13 / Ask Sillok</span></div>
+  <div class="hl"><div class="q">We took the three, and built a beta</div><h1 class="med">Ask Sillok — a team project</h1></div>
+  <div class="arch">
+    <div class="arch-n hi"><div class="an">embed</div><div class="as">Qwen3</div></div>
+    <span class="arch-arrow">→</span>
+    <div class="arch-n"><div class="an">vector search</div><div class="as">semantic match</div></div>
+    <span class="arch-arrow">→</span>
+    <div class="arch-n"><div class="an">document store</div><div class="as">text + metadata</div></div>
+    <span class="arch-arrow">→</span>
+    <div class="arch-n hi"><div class="an">rerank</div><div class="as">score + bonus</div></div>
+    <span class="arch-arrow">→</span>
+    <div class="arch-n"><div class="an">generate</div><div class="as">grounded answer</div></div>
+  </div>
+  <div class="foot">A <b>working prototype</b>, not a finished product. Every stage maps back to a design decision above — not a default.</div>
+  <div class="credits">Ask Sillok was developed by the research team of <b>Kunha Kim, Byungjun Kim, Jeong-hui Park, Donghyun Woo, and Si-heon Lee</b>.</div>
+</section>
+
+<!-- ============ S11 PIPELINE ============ -->
+<section class="slide s-pipe" data-steps="1">
+  <div class="masthead"><span class="eyebrow">Live · One question through Ask Sillok</span><span class="num">14 / Pipeline</span></div>
+  <div class="hl"><div class="q">Watch a question move through the system</div><h1 class="med">From plain language to a cited answer</h1></div>
+  <div class="pipe-tools">
+    <button class="pbtn" id="pipePlay">▶ Play the flow</button>
+    <button class="pbtn ghost" id="pipeReset">Reset</button>
+    <span class="pipe-hint">Hover or click any box to see the data at that step.</span>
+  </div>
+  <div class="pipe">
+    <div class="pipe-svg-wrap">
+      <svg id="pipeSvg" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg">
+        <g class="edges">
+          <path class="pedge" data-e="q>query"       d="M170,60 L210,60"/>
+          <path class="pedge" data-e="query>search"   d="M350,60 L390,60"/>
+          <path class="pedge" data-e="search>hydrate" d="M510,84 C540,110 540,120 460,150"/>
+          <path class="pedge" data-e="hydrate>score"  d="M300,174 L260,174"/>
+          <path class="pedge" data-e="score>answer"   d="M190,198 C190,235 300,240 360,240"/>
+        </g>
+        <g class="fnode" data-k="q" tabindex="0"><rect x="40" y="36" width="130" height="48" rx="11"/><text x="105" y="58" class="nt">question</text><text x="105" y="74" class="ns">plain language</text></g>
+        <g class="fnode" data-k="query" tabindex="0"><rect x="210" y="36" width="140" height="48" rx="11"/><text x="280" y="58" class="nt">rewrite + embed</text><text x="280" y="74" class="ns">query vector</text></g>
+        <g class="fnode" data-k="search" tabindex="0"><rect x="390" y="36" width="140" height="48" rx="11"/><text x="460" y="58" class="nt">vector search</text><text x="460" y="74" class="ns">chunk_id + dist</text></g>
+        <g class="fnode" data-k="hydrate" tabindex="0"><rect x="320" y="150" width="140" height="48" rx="11"/><text x="390" y="172" class="nt">hydrate</text><text x="390" y="188" class="ns">text + metadata</text></g>
+        <g class="fnode" data-k="score" tabindex="0"><rect x="120" y="150" width="140" height="48" rx="11"/><text x="190" y="172" class="nt">score + bonus</text><text x="190" y="188" class="ns">final_score</text></g>
+        <g class="fnode ds" data-k="answer" tabindex="0"><rect x="360" y="216" width="150" height="48" rx="11"/><text x="435" y="238" class="nt">answer</text><text x="435" y="254" class="ns">with citations</text></g>
+        <circle id="packet" class="packet" r="7" cx="0" cy="0" opacity="0"/>
+      </svg>
+    </div>
+    <div class="pinfo" id="pipeInfo">
+      <div class="pt">Follow one question through.</div>
+      <div class="pb">Hit <b>Play</b> to watch a question travel from plain language, through retrieval and scoring, to an answer that carries its citations. Each stop maps to a design choice — not a default.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ S12 PROVENANCE ============ -->
+<section class="slide s-prov" data-steps="1">
+  <div class="masthead"><span class="eyebrow">Provenance First</span><span class="num">15 / Return Path</span></div>
+  <div class="hl"><div class="q">Every claim walks back to the original</div><h1 class="med">Citation is the condition, not decoration</h1></div>
+  <div class="prov">
+    <div class="prov-s"><div class="t">Claim</div><div class="s">answer sentence</div></div>
+    <div class="prov-arrow">→</div>
+    <div class="prov-s"><div class="t">Cited passage</div><div class="s">used_chunk_ids</div></div>
+    <div class="prov-arrow">→</div>
+    <div class="prov-s"><div class="t">Full chunk</div><div class="s">record + metadata</div></div>
+    <div class="prov-arrow">→</div>
+    <div class="prov-s"><div class="t">Original entry</div><div class="s">sillok.history.go.kr</div></div>
+  </div>
+  <div class="foot">You tap a claim and move down the chain — so you can check whether the model's summary <b>changed the source's meaning</b>. Source criticism needs a return path.</div>
+</section>
+
+<!-- ============ S13 TAKEAWAY + QR ============ -->
+<section class="slide s-final" data-steps="1">
+  <div class="masthead"><span class="eyebrow">Takeaway</span><span class="num">16 / Close</span></div>
+  <div class="final">
+    <div class="final-text">
+      <h1 class="med" style="margin-bottom:24px">RAG will not replace<br>source criticism.</h1>
+      <ul class="take">
+        <li>It <b>finds, compares, and provisionally synthesizes</b> — then hands you back to the original text.</li>
+        <li>Feasibility rests on <b>design</b>, not the model: data, chunking, encoder, retrieval, evaluation.</li>
+        <li>The historian is not the end user. The historian is the <span class="jade">designer of the research environment</span>.</li>
+      </ul>
+    </div>
+    <div class="qr-card">
+      <svg class="qrcode" width="236" height="236" viewBox="0 0 33 33" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="33" height="33" fill="#fff"/><path d="M2,2H3V3H2zM3,2H4V3H3zM4,2H5V3H4zM5,2H6V3H5zM6,2H7V3H6zM7,2H8V3H7zM8,2H9V3H8zM12,2H13V3H12zM13,2H14V3H13zM14,2H15V3H14zM17,2H18V3H17zM18,2H19V3H18zM19,2H20V3H19zM20,2H21V3H20zM21,2H22V3H21zM24,2H25V3H24zM25,2H26V3H25zM26,2H27V3H26zM27,2H28V3H27zM28,2H29V3H28zM29,2H30V3H29zM30,2H31V3H30zM2,3H3V4H2zM8,3H9V4H8zM13,3H14V4H13zM19,3H20V4H19zM22,3H23V4H22zM24,3H25V4H24zM30,3H31V4H30zM2,4H3V5H2zM4,4H5V5H4zM5,4H6V5H5zM6,4H7V5H6zM8,4H9V5H8zM10,4H11V5H10zM12,4H13V5H12zM14,4H15V5H14zM16,4H17V5H16zM18,4H19V5H18zM20,4H21V5H20zM21,4H22V5H21zM24,4H25V5H24zM26,4H27V5H26zM27,4H28V5H27zM28,4H29V5H28zM30,4H31V5H30zM2,5H3V6H2zM4,5H5V6H4zM5,5H6V6H5zM6,5H7V6H6zM8,5H9V6H8zM10,5H11V6H10zM11,5H12V6H11zM12,5H13V6H12zM13,5H14V6H13zM18,5H19V6H18zM19,5H20V6H19zM21,5H22V6H21zM24,5H25V6H24zM26,5H27V6H26zM27,5H28V6H27zM28,5H29V6H28zM30,5H31V6H30zM2,6H3V7H2zM4,6H5V7H4zM5,6H6V7H5zM6,6H7V7H6zM8,6H9V7H8zM10,6H11V7H10zM11,6H12V7H11zM12,6H13V7H12zM13,6H14V7H13zM14,6H15V7H14zM15,6H16V7H15zM16,6H17V7H16zM17,6H18V7H17zM20,6H21V7H20zM21,6H22V7H21zM22,6H23V7H22zM24,6H25V7H24zM26,6H27V7H26zM27,6H28V7H27zM28,6H29V7H28zM30,6H31V7H30zM2,7H3V8H2zM8,7H9V8H8zM10,7H11V8H10zM12,7H13V8H12zM15,7H16V8H15zM16,7H17V8H16zM17,7H18V8H17zM18,7H19V8H18zM19,7H20V8H19zM20,7H21V8H20zM22,7H23V8H22zM24,7H25V8H24zM30,7H31V8H30zM2,8H3V9H2zM3,8H4V9H3zM4,8H5V9H4zM5,8H6V9H5zM6,8H7V9H6zM7,8H8V9H7zM8,8H9V9H8zM10,8H11V9H10zM12,8H13V9H12zM14,8H15V9H14zM16,8H17V9H16zM18,8H19V9H18zM20,8H21V9H20zM22,8H23V9H22zM24,8H25V9H24zM25,8H26V9H25zM26,8H27V9H26zM27,8H28V9H27zM28,8H29V9H28zM29,8H30V9H29zM30,8H31V9H30zM10,9H11V10H10zM11,9H12V10H11zM13,9H14V10H13zM14,9H15V10H14zM15,9H16V10H15zM17,9H18V10H17zM21,9H22V10H21zM22,9H23V10H22zM2,10H3V11H2zM4,10H5V11H4zM5,10H6V11H5zM6,10H7V11H6zM7,10H8V11H7zM8,10H9V11H8zM11,10H12V11H11zM12,10H13V11H12zM13,10H14V11H13zM16,10H17V11H16zM17,10H18V11H17zM19,10H20V11H19zM21,10H22V11H21zM24,10H25V11H24zM25,10H26V11H25zM26,10H27V11H26zM27,10H28V11H27zM28,10H29V11H28zM2,11H3V12H2zM5,11H6V12H5zM7,11H8V12H7zM9,11H10V12H9zM10,11H11V12H10zM11,11H12V12H11zM12,11H13V12H12zM14,11H15V12H14zM17,11H18V12H17zM18,11H19V12H18zM19,11H20V12H19zM20,11H21V12H20zM21,11H22V12H21zM22,11H23V12H22zM23,11H24V12H23zM24,11H25V12H24zM26,11H27V12H26zM30,11H31V12H30zM2,12H3V13H2zM4,12H5V13H4zM6,12H7V13H6zM8,12H9V13H8zM14,12H15V13H14zM19,12H20V13H19zM24,12H25V13H24zM25,12H26V13H25zM26,12H27V13H26zM7,13H8V14H7zM11,13H12V14H11zM13,13H14V14H13zM16,13H17V14H16zM18,13H19V14H18zM22,13H23V14H22zM23,13H24V14H23zM24,13H25V14H24zM26,13H27V14H26zM27,13H28V14H27zM29,13H30V14H29zM4,14H5V15H4zM6,14H7V15H6zM7,14H8V15H7zM8,14H9V15H8zM13,14H14V15H13zM14,14H15V15H14zM18,14H19V15H18zM19,14H20V15H19zM21,14H22V15H21zM27,14H28V15H27zM28,14H29V15H28zM2,15H3V16H2zM5,15H6V16H5zM7,15H8V16H7zM9,15H10V16H9zM14,15H15V16H14zM15,15H16V16H15zM16,15H17V16H16zM17,15H18V16H17zM19,15H20V16H19zM20,15H21V16H20zM21,15H22V16H21zM22,15H23V16H22zM23,15H24V16H23zM24,15H25V16H24zM25,15H26V16H25zM26,15H27V16H26zM30,15H31V16H30zM2,16H3V17H2zM3,16H4V17H3zM6,16H7V17H6zM8,16H9V17H8zM10,16H11V17H10zM11,16H12V17H11zM12,16H13V17H12zM15,16H16V17H15zM16,16H17V17H16zM17,16H18V17H17zM18,16H19V17H18zM23,16H24V17H23zM26,16H27V17H26zM27,16H28V17H27zM28,16H29V17H28zM2,17H3V18H2zM3,17H4V18H3zM4,17H5V18H4zM6,17H7V18H6zM7,17H8V18H7zM10,17H11V18H10zM11,17H12V18H11zM12,17H13V18H12zM15,17H16V18H15zM17,17H18V18H17zM22,17H23V18H22zM25,17H26V18H25zM26,17H27V18H26zM29,17H30V18H29zM2,18H3V19H2zM5,18H6V19H5zM6,18H7V19H6zM7,18H8V19H7zM8,18H9V19H8zM10,18H11V19H10zM13,18H14V19H13zM16,18H17V19H16zM17,18H18V19H17zM19,18H20V19H19zM20,18H21V19H20zM21,18H22V19H21zM25,18H26V19H25zM27,18H28V19H27zM28,18H29V19H28zM2,19H3V20H2zM3,19H4V20H3zM4,19H5V20H4zM5,19H6V20H5zM7,19H8V20H7zM9,19H10V20H9zM13,19H14V20H13zM14,19H15V20H14zM17,19H18V20H17zM18,19H19V20H18zM19,19H20V20H19zM20,19H21V20H20zM21,19H22V20H21zM22,19H23V20H22zM24,19H25V20H24zM25,19H26V20H25zM26,19H27V20H26zM28,19H29V20H28zM30,19H31V20H30zM2,20H3V21H2zM4,20H5V21H4zM7,20H8V21H7zM8,20H9V21H8zM9,20H10V21H9zM10,20H11V21H10zM11,20H12V21H11zM12,20H13V21H12zM14,20H15V21H14zM19,20H20V21H19zM22,20H23V21H22zM23,20H24V21H23zM25,20H26V21H25zM26,20H27V21H26zM28,20H29V21H28zM2,21H3V22H2zM6,21H7V22H6zM7,21H8V22H7zM9,21H10V22H9zM10,21H11V22H10zM13,21H14V22H13zM16,21H17V22H16zM18,21H19V22H18zM24,21H25V22H24zM25,21H26V22H25zM26,21H27V22H26zM29,21H30V22H29zM2,22H3V23H2zM8,22H9V23H8zM13,22H14V23H13zM18,22H19V23H18zM20,22H21V23H20zM21,22H22V23H21zM22,22H23V23H22zM23,22H24V23H23zM24,22H25V23H24zM25,22H26V23H25zM26,22H27V23H26zM28,22H29V23H28zM29,22H30V23H29zM30,22H31V23H30zM10,23H11V24H10zM11,23H12V24H11zM12,23H13V24H12zM13,23H14V24H13zM15,23H16V24H15zM16,23H17V24H16zM17,23H18V24H17zM19,23H20V24H19zM20,23H21V24H20zM22,23H23V24H22zM26,23H27V24H26zM27,23H28V24H27zM28,23H29V24H28zM29,23H30V24H29zM30,23H31V24H30zM2,24H3V25H2zM3,24H4V25H3zM4,24H5V25H4zM5,24H6V25H5zM6,24H7V25H6zM7,24H8V25H7zM8,24H9V25H8zM11,24H12V25H11zM12,24H13V25H12zM15,24H16V25H15zM16,24H17V25H16zM17,24H18V25H17zM18,24H19V25H18zM19,24H20V25H19zM21,24H22V25H21zM22,24H23V25H22zM24,24H25V25H24zM26,24H27V25H26zM27,24H28V25H27zM28,24H29V25H28zM2,25H3V26H2zM8,25H9V26H8zM10,25H11V26H10zM11,25H12V26H11zM12,25H13V26H12zM15,25H16V26H15zM17,25H18V26H17zM19,25H20V26H19zM20,25H21V26H20zM21,25H22V26H21zM22,25H23V26H22zM26,25H27V26H26zM30,25H31V26H30zM2,26H3V27H2zM4,26H5V27H4zM5,26H6V27H5zM6,26H7V27H6zM8,26H9V27H8zM10,26H11V27H10zM12,26H13V27H12zM13,26H14V27H13zM16,26H17V27H16zM17,26H18V27H17zM22,26H23V27H22zM23,26H24V27H23zM24,26H25V27H24zM25,26H26V27H25zM26,26H27V27H26zM28,26H29V27H28zM29,26H30V27H29zM30,26H31V27H30zM2,27H3V28H2zM4,27H5V28H4zM5,27H6V28H5zM6,27H7V28H6zM8,27H9V28H8zM10,27H11V28H10zM12,27H13V28H12zM13,27H14V28H13zM14,27H15V28H14zM17,27H18V28H17zM18,27H19V28H18zM20,27H21V28H20zM21,27H22V28H21zM22,27H23V28H22zM27,27H28V28H27zM28,27H29V28H28zM2,28H3V29H2zM4,28H5V29H4zM5,28H6V29H5zM6,28H7V29H6zM8,28H9V29H8zM10,28H11V29H10zM11,28H12V29H11zM12,28H13V29H12zM13,28H14V29H13zM20,28H21V29H20zM23,28H24V29H23zM24,28H25V29H24zM25,28H26V29H25zM26,28H27V29H26zM27,28H28V29H27zM28,28H29V29H28zM29,28H30V29H29zM2,29H3V30H2zM8,29H9V30H8zM11,29H12V30H11zM12,29H13V30H12zM18,29H19V30H18zM21,29H22V30H21zM22,29H23V30H22zM23,29H24V30H23zM24,29H25V30H24zM27,29H28V30H27zM29,29H30V30H29zM2,30H3V31H2zM3,30H4V31H3zM4,30H5V31H4zM5,30H6V31H5zM6,30H7V31H6zM7,30H8V31H7zM8,30H9V31H8zM10,30H11V31H10zM11,30H12V31H11zM13,30H14V31H13zM15,30H16V31H15zM18,30H19V31H18zM20,30H21V31H20zM21,30H22V31H21zM24,30H25V31H24zM26,30H27V31H26zM28,30H29V31H28z" fill="#20201C"/></svg>
+      <div class="qr-url">beta.asksillok.com</div>
+      <div class="qr-lab">Ask Sillok · team project · beta</div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /stage -->
+<div class="pagenum"><b id="pgNow">1</b> / <span id="pgTot">17</span></div>
+<div class="stephint" id="stepHint"></div>
+<div class="jump" id="jump">
+  <div class="jump-box">
+    <div class="jump-h"><span>Jump to slide</span><span class="jump-x">press G or click the page number · Esc to close</span></div>
+    <div id="jumpList"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const slides=[...document.querySelectorAll('.slide')];
+  const stage=document.getElementById('stage');
+  const total=slides.length;
+  let i=0, step=0;
+  const progress=document.getElementById('progress');
+  const pgNow=document.getElementById('pgNow');
+  const stepHint=document.getElementById('stepHint');
+  const prevBtn=document.getElementById('navPrev');
+  const nextBtn=document.getElementById('navNext');
+  // page numbering follows the masthead label (title slide is not numbered)
+  const numbered=slides.filter(s=>s.querySelector('.masthead .num'));
+  document.getElementById('pgTot').textContent=numbered.length;
+
+  /* ---- fixed-canvas scaling: everything stays pixel-perfect & uniform ---- */
+  function fit(){
+    const s=Math.min(window.innerWidth/1280, window.innerHeight/720);
+    stage.style.transform='scale('+s+')';
+  }
+  window.addEventListener('resize',fit); fit();
+
+  function stepsOf(sl){ return parseInt(sl.dataset.steps||'1',10); }
+
+  function renderStepHint(){
+    const n=stepsOf(slides[i]);
+    if(n<=1){ stepHint.innerHTML=''; return; }
+    let h='';
+    for(let k=0;k<n;k++) h+='<span class="dot'+(k<=step?' on':'')+'"></span>';
+    stepHint.innerHTML=h;
+  }
+
+  /* ---- per-slide step application ---- */
+  function applyStep(sl){
+    // S4 dims reveal
+    if(sl.classList.contains('s-dims')){
+      sl.querySelectorAll('.dim').forEach(d=>{
+        d.classList.toggle('on', parseInt(d.dataset.focus,10)<=step);
+      });
+    }
+    // (query-rewrite shows all at once — no step reveal)
+    // (encoder shows all at once — no step reveal)
+    renderStepHint();
+  }
+
+  function show(n,animate){
+    n=Math.max(0,Math.min(total-1,n));
+    slides[i].classList.remove('active');
+    i=n; step=0;
+    const sl=slides[i];
+    sl.classList.add('active');
+    // init step states
+    if(sl.classList.contains('s-dims')) applyStep(sl);
+    else renderStepHint();
+    progress.style.width=((i+1)/total*100)+'%';
+    // sync left-bottom page number with the masthead label (right-top)
+    const numEl=slides[i].querySelector('.masthead .num');
+    if(numEl){
+      const m=numEl.textContent.match(/\d+/);
+      pgNow.textContent = m ? m[0] : '';
+      pgNow.parentElement.style.visibility='visible';
+    } else {
+      // title slide: hide the page counter entirely
+      pgNow.parentElement.style.visibility='hidden';
+    }
+    prevBtn.disabled=(i===0);
+    nextBtn.disabled=(i===total-1);
+    // slide-specific inits
+    if(sl.classList.contains('s-chunk')) drawChunks(ckMode);
+    if(sl.classList.contains('s-pipe')) resetPipe();
+  }
+
+  function next(){
+    const sl=slides[i]; const maxStep=stepsOf(sl)-1;
+    if(step<maxStep){ step++; applyStep(sl); return; }
+    show(i+1,true);
+  }
+  function prev(){
+    if(step>0){ step--; applyStep(slides[i]); return; }
+    show(i-1,true);
+  }
+
+  prevBtn.addEventListener('click',e=>{e.stopPropagation();prev();});
+  nextBtn.addEventListener('click',e=>{e.stopPropagation();next();});
+  document.addEventListener('keydown',e=>{
+    if(['ArrowRight','ArrowDown',' ','PageDown'].includes(e.key)){e.preventDefault();next();}
+    else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();prev();}
+    else if(e.key==='Home'){show(0);} else if(e.key==='End'){show(total-1);}
+    else if(e.key==='t'||e.key==='T'){toggleTheme();}
+    else if(e.key==='Escape'){closeJump();}
+    else if(e.key==='g'||e.key==='G'){toggleJump();}
+  });
+  // click halves to navigate (ignore interactive controls)
+  document.addEventListener('click',e=>{
+    if(e.target.closest('button,input,.fnode,.chip,.qr-card,a,pre,.ck-btn,.jump,.pagenum,.masthead .num')) return;
+    if(document.getElementById('jump').classList.contains('on')) return;
+    const x=e.clientX/window.innerWidth;
+    if(x>0.68) next(); else if(x<0.32) prev();
+  });
+  // dims / qr cards clickable to jump step
+  document.querySelectorAll('.s-dims .dim').forEach(el=>{
+    if(el.dataset.focus){ el.style.cursor='pointer';
+      el.addEventListener('click',ev=>{ev.stopPropagation();step=parseInt(el.dataset.focus,10);applyStep(slides[i]);}); }
+  });
+
+  /* ---- theme toggle ---- */
+  function applyTheme(t){
+    if(t==='dark') document.documentElement.setAttribute('data-theme','dark');
+    else document.documentElement.setAttribute('data-theme','light');
+    try{localStorage.setItem('sillokTheme',t);}catch(_){}
+  }
+  function toggleTheme(){
+    const cur=document.documentElement.getAttribute('data-theme')==='dark'?'dark':'light';
+    applyTheme(cur==='dark'?'light':'dark');
+  }
+  document.getElementById('navTheme').addEventListener('click',e=>{e.stopPropagation();toggleTheme();});
+  (function(){let s=null;try{s=localStorage.getItem('sillokTheme');}catch(_){}if(s)applyTheme(s);})();
+
+  /* ---- S5 chunking: char vs meaning ---- */
+  const ckTrack=document.getElementById('ckTrack');
+  const ckNote=document.getElementById('ckNote');
+  let ckMode='char';
+  const entries=[9,1,1,5,1,2]; // relative lengths (long + shorts)
+  const jade=['#1F9D94','#3FBFB4','#2E8B84','#4FB0A6','#177C74','#57bdb2'];
+  function drawChunks(mode){
+    if(!ckTrack) return;
+    ckTrack.innerHTML='';
+    let cells=[];
+    if(mode==='entry'){
+      entries.forEach((w,k)=>cells.push({w,c:jade[k%jade.length],t:'entry '+(k+1)}));
+      ckNote.innerHTML='<b class="good">By meaning:</b> each chunk is one whole record — it stays coherent. But the long entry becomes a huge chunk, so search <b class="good">inside</b> it gets blurry.';
+    }else{
+      const tot=entries.reduce((a,b)=>a+b,0), piece=3, n=Math.ceil(tot/piece);
+      for(let k=0;k<n;k++) cells.push({w:piece,c:k%2?'#B0492E':'#C7583C',t:''});
+      ckNote.innerHTML='<b class="bad">By fixed length:</b> even pieces, easy to build — but one event gets <b class="bad">cut across two chunks</b>, and different records blur together.';
+    }
+    cells.forEach((c,k)=>{
+      const el=document.createElement('div');
+      el.className='ck-cell'; el.style.flex=c.w+' 0 0'; el.style.background=c.c; el.style.opacity='0'; el.textContent=c.t;
+      ckTrack.appendChild(el);
+      setTimeout(()=>{el.style.opacity='1';},55*k);
+    });
+  }
+  document.querySelectorAll('.ck-btn').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation();
+    document.querySelectorAll('.ck-btn').forEach(x=>x.classList.toggle('on',x===b));
+    ckMode=b.dataset.mode; drawChunks(ckMode);
+  }));
+
+  /* ---- S8 score simulator ---- */
+  const bonuses=[
+    ['office_name',0.35,'query names 推刷都監'],
+    ['reign_match',0.30,'record is in Hyojong reign'],
+    ['year_range',0.22,'date falls in 1649–1659'],
+    ['subject',0.14,'subject tag = slave policy'],
+    ['person_ref',0.12,'a named official appears']
+  ];
+  const chipBox=document.getElementById('simChips');
+  const sstate={};
+  if(chipBox){
+    bonuses.forEach(([name,val,why])=>{
+      const c=document.createElement('button');
+      c.className='chip';c.type='button';
+      c.innerHTML=name+'<span class="b">+'+val.toFixed(2)+'</span><span class="why">'+why+'</span>';
+      c.addEventListener('click',e=>{e.stopPropagation();sstate[name]=!sstate[name];c.classList.toggle('on',sstate[name]);recalc();});
+      chipBox.appendChild(c);
+    });
+  }
+  const dist=document.getElementById('simDist'),distV=document.getElementById('simDistV');
+  const outSem=document.getElementById('outSem'),outBonus=document.getElementById('outBonus'),
+        outFinal=document.getElementById('outFinal'),outBar=document.getElementById('outBar');
+  function recalc(){
+    const d=parseFloat(dist.value);distV.textContent=d.toFixed(2);
+    const sem=1-d;let b=0;bonuses.forEach(([n,v])=>{if(sstate[n])b+=v;});
+    const fin=sem+b;
+    outSem.textContent=sem.toFixed(2);outBonus.textContent='+'+b.toFixed(2);
+    outFinal.textContent=fin.toFixed(2);outBar.style.width=Math.min(fin/2*100,100)+'%';
+  }
+  if(dist){dist.addEventListener('input',recalc);recalc();}
+
+  /* ---- S11 pipeline animation ---- */
+  const svg=document.getElementById('pipeSvg');
+  const info=document.getElementById('pipeInfo');
+  const packet=document.getElementById('packet');
+  const D={
+    q:['question','A plain-language question enters. No date, no exact keyword needed — the messy way a historian actually asks.'],
+    query:['rewrite + embed','The question is rewritten (aliases, period) then turned into a <b>query vector</b>. This already sets what can be found.'],
+    search:['vector search','Compared against stored chunk vectors. Returns only <code>chunk_id</code> and <code>distance</code> — a raw semantic guess, no meaning yet.'],
+    hydrate:['hydrate','Each id is filled back in from the document store: original text, translation, date, subject, and the link home.'],
+    score:['score + bonus','<code>semantic = 1−distance</code>, then structured historical bonuses are added. This is where <b>design</b> shapes the ranking.'],
+    answer:['answer','Only the top chunks go to generation. The answer comes back <b>with its citations</b> — ready to be checked, not just read.']
+  };
+  const nodes=svg?[...svg.querySelectorAll('.fnode')]:[];
+  function pshow(k){const d=D[k];if(!d)return;info.innerHTML='<span class="ppath">step</span><div class="pt">'+d[0]+'</div><div class="pb">'+d[1]+'</div>';}
+  nodes.forEach(n=>{const k=n.dataset.k;
+    n.addEventListener('mouseenter',()=>pshow(k));
+    n.addEventListener('focus',()=>pshow(k));
+    n.addEventListener('click',e=>{e.stopPropagation();nodes.forEach(x=>x.classList.remove('flow-active'));n.classList.add('flow-active');pshow(k);});
+  });
+  const center={};
+  nodes.forEach(n=>{const r=n.querySelector('rect');
+    center[n.dataset.k]={x:+r.getAttribute('x')+ +r.getAttribute('width')/2,y:+r.getAttribute('y')+ +r.getAttribute('height')/2};});
+  const walk=[['q','query'],['query','search'],['search','hydrate'],['hydrate','score'],['score','answer']];
+  function litEdge(f,t){svg.querySelectorAll('.pedge').forEach(e=>e.classList.remove('flow-lit'));
+    const el=svg.querySelector('.pedge[data-e="'+f+'>'+t+'"]');if(el)el.classList.add('flow-lit');}
+  let playing=false,raf=null,tid=null;
+  const playBtn=document.getElementById('pipePlay'),resetBtn=document.getElementById('pipeReset');
+  function resetPipe(){
+    cancelAnimationFrame(raf);clearTimeout(tid);playing=false;
+    nodes.forEach(n=>n.classList.remove('flow-active'));
+    svg&&svg.querySelectorAll('.pedge').forEach(e=>e.classList.remove('flow-lit'));
+    if(packet)packet.setAttribute('opacity','0');
+    if(playBtn)playBtn.textContent='▶ Play the flow';
+    if(info)info.innerHTML='<div class="pt">Follow one question through.</div><div class="pb">Hit <b>Play</b> to watch a question travel from plain language, through retrieval and scoring, to an answer that carries its citations.</div>';
+  }
+  if(resetBtn)resetBtn.addEventListener('click',e=>{e.stopPropagation();resetPipe();});
+  function movePacket(from,to,dur){return new Promise(res=>{
+    const a=center[from],b=center[to];if(!a||!b){res();return;}
+    packet.setAttribute('opacity','1');const t0=performance.now();
+    function stepf(t){let p=Math.min((t-t0)/dur,1);const e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+      packet.setAttribute('cx',a.x+(b.x-a.x)*e);packet.setAttribute('cy',a.y+(b.y-a.y)*e);
+      if(p<1)raf=requestAnimationFrame(stepf);else res();}
+    raf=requestAnimationFrame(stepf);});}
+  const wait=ms=>new Promise(r=>{tid=setTimeout(r,ms);});
+  function lite(k){nodes.forEach(n=>n.classList.toggle('flow-active',n.dataset.k===k));}
+  async function play(e){
+    if(e)e.stopPropagation();
+    if(playing){resetPipe();return;}
+    const reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+    resetPipe();playing=true;playBtn.textContent='■ Stop';const dur=reduce?0:560;
+    lite('q');pshow('q');let c=center['q'];packet.setAttribute('cx',c.x);packet.setAttribute('cy',c.y);packet.setAttribute('opacity','1');
+    await wait(reduce?250:460);
+    for(let k=0;k<walk.length&&playing;k++){const[f,t]=walk[k];litEdge(f,t);
+      await movePacket(f,t,dur);if(!playing)break;lite(t);pshow(t);await wait(reduce?250:430);}
+    svg.querySelectorAll('.pedge').forEach(el=>el.classList.remove('flow-lit'));
+    if(playing){playing=false;playBtn.textContent='▶ Play the flow';packet.setAttribute('opacity','0');lite('answer');pshow('answer');}
+  }
+  if(playBtn)playBtn.addEventListener('click',play);
+
+  /* ---- page jump menu ---- */
+  const jump=document.getElementById('jump');
+  const jumpList=document.getElementById('jumpList');
+  slides.forEach((sl,k)=>{
+    const numEl=sl.querySelector('.masthead .num');
+    // title slide (no masthead num) -> label it explicitly
+    let n, t;
+    if(numEl){
+      const parts=numEl.textContent.split('/');
+      n=parts[0].trim();
+      t=(parts[1]||'').trim();
+    } else {
+      n='—'; t='Title';
+    }
+    const it=document.createElement('div');
+    it.className='ji'; it.dataset.idx=k;
+    it.innerHTML='<span class="ji-n">'+n+'</span><span class="ji-t">'+t+'</span>';
+    it.addEventListener('click',e=>{e.stopPropagation();closeJump();show(k,false);});
+    jumpList.appendChild(it);
+  });
+  const jumpItems=[...jumpList.children];
+  function openJump(){
+    jumpItems.forEach((it,k)=>it.classList.toggle('cur',k===i));
+    jump.classList.add('on');
+    const cur=jumpItems[i]; if(cur) cur.scrollIntoView({block:'nearest'});
+  }
+  function closeJump(){ jump.classList.remove('on'); }
+  function toggleJump(){ jump.classList.contains('on')?closeJump():openJump(); }
+  // clicking the masthead number or the bottom-left page counter opens the menu
+  document.querySelectorAll('.masthead .num').forEach(n=>{
+    n.addEventListener('click',e=>{e.stopPropagation();toggleJump();});
+  });
+  document.querySelector('.pagenum').addEventListener('click',e=>{e.stopPropagation();toggleJump();});
+  // click backdrop to close; clicks inside the box do not close
+  jump.addEventListener('click',e=>{e.stopPropagation();closeJump();});
+  jump.querySelector('.jump-box').addEventListener('click',e=>e.stopPropagation());
+
+  show(0,false);
+})();
+</script>
+</body>
+</html>
