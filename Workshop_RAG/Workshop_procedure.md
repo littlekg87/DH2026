@@ -30,7 +30,7 @@ The models and data are prepared for you in a shared Google Drive folder. You do
 **not** need to download them — you only add a shortcut so your Colab can read
 them.
 
-1. Open the shared folder: **[shared folder link — _to be added_]**
+1. Open the shared folder: **[(https://drive.google.com/drive/folders/1nbFRzpxjPUYldNNV800QqhzENzbYR0eW?usp=sharing)]**
 2. Click **"Add shortcut to Drive"** (right-click the folder, or use the
    toolbar).
 3. Place the shortcut in **My Drive** (the top level).
