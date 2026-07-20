@@ -25,6 +25,7 @@ runs the exact same environment.
     "sentence-transformers>=4,<5" \
     faiss-cpu==1.14.3 \
     pypdf==5.9.0 \
+    pymupdf==1.28.0 \
     "transformers>=4.51,<5"
 ```
 
@@ -125,8 +126,14 @@ print(f"{len(naive_chunks)} naive chunks → naive_chunks.txt")
 ## STEP 3 — Structure the PDF into hierarchical XML
 
 A plain text dump loses the document's hierarchy (Goal > Subsection >
-Paragraph) and mixes in noise (typesetting directives, broken table fragments).
-`build_xml.py` rebuilds that hierarchy as XML.
+Paragraph) and mixes in noise (typesetting directives, broken table fragments,
+photo captions). `build_xml.py` rebuilds that hierarchy as XML.
+
+The key idea: **the structure is already in the PDF — as typography.** The
+editor set subsection headings in GothamBold 11pt and body text in Whitney 9pt.
+So we do not have to guess from the words. We read what the document already
+declares. Chart labels, captions and typesetting notes are set in other faces,
+so they drop out on their own.
 
 The XML produced here is written to **local disk** — you watch the structuring
 happen. The next step reads the canonical XML already prepared in Drive.
@@ -149,42 +156,96 @@ One `<subsection>` becomes one chunk. The heading and body become searchable
 text; the Goal number, name, pages, and heading become **metadata** — the
 provenance that rides along with every hit.
 
+One constraint decides where we may cut: the encoder reads at most **256
+tokens**. Anything past that is silently dropped before the vector is made, so
+an over-long chunk would be indexed by its opening lines alone. We therefore
+cap a chunk at 172 words (heading included) and split at **paragraph**
+boundaries — and if a single paragraph is still too long, at **sentence**
+boundaries. Sentences are never cut. Split chunks carry a `part` field; their
+heading, goal and pages are unchanged, so provenance survives the split.
+
 Input is the **canonical XML in Drive** (read-only), so every participant starts
 from the exact same edition.
 
 **4-1. XML → chunks.**
 
 ```python
-import json, xml.etree.ElementTree as ET
+import json, re, xml.etree.ElementTree as ET
 
-XML_PATH = f"{BASE}/Source/sdg_report_2025.xml"   # canonical edition in Drive
+XML_PATH  = f"{BASE}/Source/sdg_report_2025.xml"   # canonical edition in Drive
+MAX_WORDS = 172        # heading included — keeps every chunk under 256 tokens
 
-root = ET.parse(XML_PATH).getroot()
 
+def split_long(text, limit):
+    """Too long to embed: cut at sentence boundaries, never mid-sentence."""
+    parts, current, count = [], [], 0
+    for sentence in re.split(r"(?<=[.!?])\s+", text):
+        words = len(sentence.split())
+        if current and count + words > limit:
+            parts.append(" ".join(current))
+            current, count = [], 0
+        current.append(sentence)
+        count += words
+    if current:
+        parts.append(" ".join(current))
+    return parts
+
+
+root   = ET.parse(XML_PATH).getroot()
 chunks = []
+
 for goal in root.findall("goal"):
     g_num, g_name, g_pages = int(goal.get("number")), goal.get("name"), goal.get("pages")
+    seq = 0
 
-    for i, sub in enumerate(goal.findall("subsection")):
+    for sub in goal.findall("subsection"):
         heading = sub.get("heading")
-        body    = "\n".join(p.text for p in sub.findall("paragraph") if p.text)
+        budget  = max(MAX_WORDS - len(heading.split()), 40)
 
-        chunks.append({
-            "metadata": {                          # provenance. never embedded.
-                "id":        f"G{g_num:02d}-S{i+1:02d}",
+        # 1. paragraphs, pre-split if any single one is oversized
+        paragraphs = []
+        for p in sub.findall("paragraph"):
+            if not p.text:
+                continue
+            paragraphs += (split_long(p.text, budget)
+                           if len(p.text.split()) > budget else [p.text])
+
+        # 2. pack paragraphs into chunks up to the budget
+        groups, current, count = [], [], 0
+        for para in paragraphs:
+            words = len(para.split())
+            if current and count + words > budget:
+                groups.append(current)
+                current, count = [], 0
+            current.append(para)
+            count += words
+        if current:
+            groups.append(current)
+
+        # 3. one chunk per group; provenance is identical across the parts
+        for i, group in enumerate(groups):
+            seq += 1
+            metadata = {                           # provenance. never embedded.
+                "id":        f"G{g_num:02d}-S{seq:02d}",
                 "goal":      g_num,
                 "goal_name": g_name,
                 "pages":     g_pages,
                 "heading":   heading,
-            },
-            "text": f"{heading}\n{body}",          # body. only this is embedded.
-        })
+            }
+            if len(groups) > 1:
+                metadata["part"] = f"{i+1}/{len(groups)}"
+            chunks.append({
+                "metadata": metadata,
+                "text": f"{heading}\n" + "\n".join(group),   # only this is embedded
+            })
 
 with open("sdg_chunks.jsonl", "w", encoding="utf-8") as f:
     for c in chunks:
         f.write(json.dumps(c, ensure_ascii=False) + "\n")
 
+whole = sum(1 for c in chunks if "part" not in c["metadata"])
 print(f"{len(chunks)} chunks → sdg_chunks.jsonl")
+print(f"  {whole} subsections fit in one chunk; the rest were split")
 ```
 
 **4-2. chunks → LangChain Documents.** Same content, re-cast into the shape
@@ -386,8 +447,9 @@ it rides along with the hit.
 def search_with_sources(q, k=3):
     for rank, (doc, dist) in enumerate(store.similarity_search_with_score(q, k=k), 1):
         m = doc.metadata
+        part = f" · part {m['part']}" if "part" in m else ""
         print(f"[{rank}]  distance {dist:.4f}")
-        print(f"     {m['id']} · Goal {m['goal']} {m['goal_name']} · pp. {m['pages']}")
+        print(f"     {m['id']} · Goal {m['goal']} {m['goal_name']} · pp. {m['pages']}{part}")
         print(f"     {m['heading']}")
         print()
         print(doc.page_content)
@@ -404,9 +466,10 @@ search_with_sources(query)
 The retriever finds evidence; the LLM turns it into an answer. Every answer is
 shown together with the sources it rests on.
 
-Qwen3 differs from Flan-T5 in three ways: it is causal, not seq2seq
-(`AutoModelForCausalLM`); it is a chat model (input is wrapped in the chat
-template); and it echoes the prompt (we slice the answer back out).
+Three things about Qwen3 shape the wrapper below: it is a **causal** model
+(`AutoModelForCausalLM`, not seq2seq); it is a **chat** model, so the input is
+wrapped in its chat template; and it **echoes the prompt**, so we slice the
+answer back out.
 
 **10-1. Load Qwen3 and wrap it as a LangChain LLM.**
 
@@ -503,7 +566,8 @@ def ask_with_sources(q, k=3):
     print("\nSources")
     for doc, _ in results:
         m = doc.metadata
-        print(f"  [{m['id']}] Goal {m['goal']} {m['goal_name']} · pp. {m['pages']}")
+        part = f" · part {m['part']}" if "part" in m else ""
+        print(f"  [{m['id']}] Goal {m['goal']} {m['goal_name']} · pp. {m['pages']}{part}")
 
 query = "How many people still live in extreme poverty?"
 ask_with_sources(query)
