@@ -233,6 +233,44 @@
     font-family:var(--serif);font-style:italic;font-size:1.02rem;color:var(--gold);
   }
 
+  /* ---------- 무엇이 남는가 — 사실 누르면 의미가 열린다 ---------- */
+  .keeps{margin:30px 0 0}
+  .keep{
+    display:flex;gap:22px;align-items:flex-start;
+    border:1px solid var(--line);border-left:3px solid var(--teal);
+    border-radius:10px;padding:20px 24px;margin-bottom:12px;background:var(--ink-2);
+  }
+  .keep .kn{
+    font-family:var(--serif);font-weight:700;font-size:1.9rem;line-height:1;
+    color:var(--teal);flex-shrink:0;padding-top:2px;
+  }
+  .keep .kb{flex:1}
+  .keep .kt{font-size:1.12rem;color:var(--paper);font-weight:400;line-height:1.6}
+  .keep .km{
+    display:block;margin-top:0;max-height:0;overflow:hidden;opacity:0;
+    font-size:1.02rem;color:var(--teal-soft);line-height:1.7;
+    transition:max-height .45s ease,opacity .4s ease,margin-top .45s ease;
+  }
+  .keep.open .km{max-height:9em;opacity:1;margin-top:11px}
+  .keep .km::before{content:"→ ";color:var(--teal);font-family:var(--mono)}
+
+  /* 남지 않는 것 — 앞의 셋과 색으로 갈라 세운다 */
+  .notkeep{
+    margin:30px 0 0;border:1px dashed var(--line-soft);border-radius:10px;
+    padding:22px 26px;background:rgba(193,83,58,.04);
+    opacity:0;transform:translateY(10px);
+    transition:opacity .5s ease,transform .5s ease;
+  }
+  .notkeep.show{opacity:1;transform:translateY(0)}
+  .notkeep .nh{
+    font-family:var(--mono);font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--cinnabar-soft);margin-bottom:14px;
+  }
+  .notkeep .nrow{display:flex;gap:14px;align-items:flex-start;margin:11px 0}
+  .notkeep .nx{color:var(--cinnabar);font-family:var(--mono);font-size:1rem;flex-shrink:0;padding-top:2px}
+  .notkeep .nt{font-size:1.04rem;color:var(--paper);font-weight:400}
+  .notkeep .nd{display:block;font-size:.95rem;color:var(--paper-dim);margin-top:4px;line-height:1.65}
+
   /* ---------- PIPELINE DIAGRAM (signature) ---------- */
   .pipe{margin:36px 0 10px}
   .pipe-cols{display:grid;grid-template-columns:1fr 60px 1fr;gap:0;align-items:start}
@@ -705,6 +743,7 @@
   :root[data-theme="light"] .fn:hover,
   :root[data-theme="light"] .fn:focus-visible{background:rgba(138,106,40,.20)}
   :root[data-theme="light"] .prep{background:rgba(138,106,40,.05)}
+  :root[data-theme="light"] .notkeep{background:rgba(176,64,42,.05)}
   :root[data-theme="light"] .analogy .seal{background:rgba(138,106,40,.07)}
   /* 다이어그램 SVG 는 stroke 를 직접 갖고 있다 */
   :root[data-theme="light"] .pipe-bridge svg{stroke:#35755e}
@@ -771,6 +810,7 @@
       <div class="label"><span lang="ko">구조</span><span lang="en">Structure</span></div>
       <a href="#what"><span class="num">·</span><span lang="ko">RAG란 무엇인가</span><span lang="en">What RAG is</span></a>
       <a href="#journey"><span class="num">·</span><span lang="ko">오늘의 여정</span><span lang="en">Today's journey</span></a>
+      <a href="#takeaway"><span class="num">·</span><span lang="ko">무엇이 남는가</span><span lang="en">What remains</span></a>
     </div>
 
     <div class="navgroup">
@@ -1093,6 +1133,59 @@
           <div class="stackcard"><div class="sk"><span lang="ko">벡터 저장소</span><span lang="en">Vector store</span></div><div class="sv">FAISS</div><div class="sd">IndexFlatL2</div></div>
           <div class="stackcard"><div class="sk">LLM</div><div class="sv">Qwen3-0.6B</div><div class="sd"><span lang="ko">로컬, API 키 불필요</span><span lang="en">local, no API key</span></div></div>
           <div class="stackcard"><div class="sk"><span lang="ko">코퍼스</span><span lang="en">Corpus</span></div><div class="sv">SDG Report 2025</div><div class="sd">UN Statistics Division</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 무엇이 남는가 ============ -->
+    <section id="takeaway">
+      <div class="inner">
+        <div class="eyebrow teal"><span lang="ko">도입 · 남는 것</span><span lang="en">Introduction · What remains</span></div>
+        <h2><span lang="ko">끝나고 나면 무엇이 남는가</span><span lang="en">What remains when this is over</span></h2>
+        <p class="lead"><span lang="ko">반나절 뒤에 손에 쥐고 나가는 것은 셋이다. 각각이 무엇을 뜻하는지가 더 중요하다.</span><span lang="en">Three things go home with you after half a day. What each of them <em>means</em> matters more.</span></p>
+
+        <div class="keeps" id="keeps">
+          <div class="keep">
+            <div class="kn">01</div>
+            <div class="kb">
+              <div class="kt"><span lang="ko">RAG 파이프라인을 세부적으로 이해한다.</span><span lang="en">You understand the RAG pipeline in detail.</span></div>
+              <span class="km"><span lang="ko">이는 곧 당신이 <strong>직접 RAG 파이프라인을 설계할 수 있는 능력</strong>을 갖게 되었다는 뜻이다.</span><span lang="en">Which means you now have <strong>the ability to design a RAG pipeline yourself</strong>.</span></span>
+            </div>
+          </div>
+          <div class="keep">
+            <div class="kn">02</div>
+            <div class="kb">
+              <div class="kt"><span lang="ko">RAG에서 전거(metadata)를 다는 일이 왜 중요한지 이해한다.</span><span lang="en">You understand why attaching provenance (metadata) matters in RAG.</span></div>
+              <span class="km"><span lang="ko">이는 곧 당신이 <strong>RAG의 기술철학</strong>을 이해했다는 뜻이다.</span><span lang="en">Which means you have grasped <strong>the technical philosophy of RAG</strong>.</span></span>
+            </div>
+          </div>
+          <div class="keep">
+            <div class="kn">03</div>
+            <div class="kb">
+              <div class="kt"><span lang="ko">RAG의 성능을 개선하기 위한 조건을 이해한다.</span><span lang="en">You understand the conditions for improving RAG's performance.</span></div>
+              <span class="km"><span lang="ko">이는 곧 <strong>RAG의 한계와 가능성</strong>을 정확히 깨닫게 된다는 뜻이다.</span><span lang="en">Which means you come to see <strong>RAG's limits and its possibilities</strong> precisely.</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="probe">
+          <button class="probebtn" id="keepBtn" type="button"><span class="ic">◎</span><span id="keepLabel"><span lang="ko">그래서, 무엇을 뜻하는가</span><span lang="en">So what does that mean?</span></span></button>
+        </div>
+
+        <div class="notkeep" id="notkeep">
+          <div class="nh"><span lang="ko">그리고, 남지 않는 것</span><span lang="en">And what does not remain</span></div>
+          <div class="nrow">
+            <span class="nx">✗</span>
+            <span class="nt"><span lang="ko">훌륭한 코딩 실력</span><span lang="en">Great coding skills</span>
+              <span class="nd"><span lang="ko">이 워크숍은 코딩 능력을 향상하기 위한 세션이 아니다.</span><span lang="en">This workshop is not a session for improving how well you code.</span></span>
+            </span>
+          </div>
+          <div class="nrow">
+            <span class="nx">✗</span>
+            <span class="nt"><span lang="ko">완벽하게 작동하는 RAG 검색기</span><span lang="en">A flawless RAG retriever</span>
+              <span class="nd"><span lang="ko">이 워크숍은 오히려 RAG의 <strong>실패 가능성</strong>을 더 깊게 탐구한다.</span><span lang="en">If anything, this workshop digs deeper into <strong>the ways RAG fails</strong>.</span></span>
+            </span>
+          </div>
         </div>
       </div>
     </section>
@@ -1805,6 +1898,41 @@ order = np.<span class="c-fn">argsort</span>(distances)             <span class=
     run('llm');   // 첫 진입 상태
     // 언어만 바뀔 때는 애니메이션을 다시 돌리지 않고 문구만 갈아 끼운다
     onLangChange(() => { cap.innerHTML = capFor(cur); });
+  })();
+
+  // 무엇이 남는가 — 사실을 누르면 「이는 곧 —」이 차례로 열린다
+  (() => {
+    const btn = document.getElementById('keepBtn');
+    if (!btn) return;
+    const label = document.getElementById('keepLabel');
+    const rows  = Array.from(document.querySelectorAll('#keeps .keep'));
+    const not   = document.getElementById('notkeep');
+    let open = false, timers = [];
+
+    const paint = () => {
+      label.textContent = open
+        ? L('되돌리기', 'Undo')
+        : L('그래서, 무엇을 뜻하는가', 'So what does that mean?');
+    };
+
+    const reset = () => {
+      timers.forEach(clearTimeout); timers = [];
+      rows.forEach(r => r.classList.remove('open'));
+      not.classList.remove('show');
+      open = false;
+      paint();
+    };
+
+    const reveal = () => {
+      rows.forEach((r, i) => timers.push(setTimeout(() => r.classList.add('open'), 420 * i)));
+      timers.push(setTimeout(() => not.classList.add('show'), 420 * rows.length + 250));
+      open = true;
+      paint();
+    };
+
+    btn.addEventListener('click', () => open ? reset() : reveal());
+    paint();
+    onLangChange(paint);
   })();
 
   // ③ 사슬이 켜진다 — 「실제로는?」
