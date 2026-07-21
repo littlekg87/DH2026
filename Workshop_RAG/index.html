@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build a Working RAG in Half a Day — DH2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<!-- 테마·언어 토글. 보조자료와 localStorage 키를 공유하므로 선택이 자료 사이에서 유지된다.
+     스타일은 이 파일이 자체적으로 갖는다 (theme.css 는 정독용 규격이라 쓰지 않는다). -->
+<script src="html/ui.js"></script>
+<style>
+  :root{
+    --ink:#161b26;          /* 잉크빛 짙은 남색 배경 */
+    --ink-2:#1e2534;        /* 카드 배경 */
+    --ink-3:#252d40;        /* 코드블록 배경 */
+    --paper:#e8e4d8;        /* 종이빛 본문 */
+    --paper-dim:#a8a596;    /* 흐린 종이빛 */
+    --paper-faint:#6b6f7d;  /* 아주 흐린 */
+    --cinnabar:#c1533a;     /* 붉은 강조 — 교정·주묵빛 */
+    --cinnabar-soft:#d97757;
+    --teal:#4a9d8e;         /* FAISS 경첩, 청록 */
+    --teal-soft:#6fc0b0;
+    --gold:#c9a86a;         /* 강조 데이터 */
+    --line:#2f3849;         /* 괘선 */
+    --line-soft:#3a4457;
+    --sans:'Noto Sans KR',system-ui,sans-serif;
+    --serif:'Noto Serif KR',serif;
+    --mono:'JetBrains Mono','Noto Sans KR',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+  body{
+    background:var(--ink);color:var(--paper);
+    font-family:var(--sans);font-weight:300;line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- LAYOUT ---------- */
+  .wrap{display:flex;min-height:100vh}
+  nav{
+    width:270px;flex-shrink:0;position:fixed;top:0;left:0;height:100vh;
+    background:var(--ink-2);border-right:1px solid var(--line);
+    overflow-y:auto;padding:28px 0 40px;z-index:50;
+  }
+  nav::-webkit-scrollbar{width:8px}
+  nav::-webkit-scrollbar-thumb{background:var(--line-soft);border-radius:4px}
+  main{margin-left:270px;flex:1;max-width:100%}
+
+  /* ---------- NAV ---------- */
+  .brand{padding:0 26px 22px;border-bottom:1px solid var(--line);margin-bottom:14px}
+  .brand .ktitle{font-family:var(--serif);font-weight:700;font-size:1.12rem;color:var(--paper);letter-spacing:-.01em;line-height:1.35}
+  .brand .etitle{font-family:var(--mono);font-size:.62rem;color:var(--teal-soft);letter-spacing:.14em;text-transform:uppercase;margin-top:8px}
+  .navgroup{padding:14px 0 6px}
+  .navgroup .label{
+    font-family:var(--mono);font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--paper-faint);padding:0 26px 8px;
+  }
+  nav a{
+    display:flex;align-items:baseline;gap:11px;
+    padding:7px 26px;color:var(--paper-dim);text-decoration:none;
+    font-size:.855rem;font-weight:400;border-left:2px solid transparent;
+    transition:all .16s ease;
+  }
+  nav a .num{font-family:var(--mono);font-size:.7rem;color:var(--paper-faint);min-width:22px;flex-shrink:0}
+  nav a:hover{color:var(--paper);background:rgba(255,255,255,.025);border-left-color:var(--line-soft)}
+  nav a.active{color:var(--paper);border-left-color:var(--cinnabar);background:rgba(193,83,58,.07)}
+  nav a.active .num{color:var(--cinnabar-soft)}
+  nav a.pivot .num{color:var(--teal)}
+  nav a.pivot.active{border-left-color:var(--teal);background:rgba(74,157,142,.08)}
+  nav a.pivot.active .num{color:var(--teal-soft)}
+
+  /* ---------- SECTIONS ---------- */
+  section{
+    min-height:100vh;padding:78px 8vw 90px;
+    border-bottom:1px solid var(--line);
+    display:flex;flex-direction:column;justify-content:center;
+    scroll-margin-top:0;
+  }
+  section.tight{min-height:auto;justify-content:flex-start}
+  .inner{width:100%;max-width:940px;margin:0 auto}
+
+  .eyebrow{
+    font-family:var(--mono);font-size:.7rem;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--cinnabar-soft);margin-bottom:20px;display:flex;align-items:center;gap:12px;
+  }
+  .eyebrow::before{content:"";width:28px;height:1px;background:var(--cinnabar)}
+  .eyebrow.teal{color:var(--teal-soft)}
+  .eyebrow.teal::before{background:var(--teal)}
+
+  h1{font-family:var(--serif);font-weight:700;font-size:clamp(2rem,5vw,3.4rem);line-height:1.18;letter-spacing:-.02em;color:var(--paper)}
+  h2{font-family:var(--serif);font-weight:700;font-size:clamp(1.6rem,3.4vw,2.5rem);line-height:1.24;letter-spacing:-.015em;color:var(--paper)}
+  h3{font-family:var(--sans);font-weight:700;font-size:1.15rem;color:var(--paper);margin-bottom:10px}
+  .lead{font-size:1.16rem;font-weight:300;color:var(--paper-dim);line-height:1.75;max-width:680px;margin-top:22px}
+  p{font-weight:300;color:var(--paper-dim);margin-top:14px;max-width:680px}
+  p strong,li strong{color:var(--paper);font-weight:500}
+  .cinnabar-text{color:var(--cinnabar-soft);font-weight:500}
+  .teal-text{color:var(--teal-soft);font-weight:500}
+
+  /* STEP big number */
+  .stephead{display:flex;align-items:flex-start;gap:26px;margin-bottom:8px}
+  .stepnum{font-family:var(--serif);font-weight:700;font-size:clamp(3.2rem,8vw,5.5rem);line-height:.85;color:var(--line-soft);flex-shrink:0}
+  .stepnum.pivot{color:var(--teal)}
+  .stephead .txt{padding-top:6px}
+  .steptag{font-family:var(--mono);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--paper-faint);margin-bottom:6px}
+
+  /* one-liner summary bar */
+  .summary{
+    border-left:3px solid var(--cinnabar);padding:14px 20px;margin:26px 0;
+    background:rgba(193,83,58,.05);font-size:1.05rem;color:var(--paper);font-weight:400;
+  }
+  .summary.pivot{border-left-color:var(--teal);background:rgba(74,157,142,.06)}
+
+  /* code block — terminal */
+  .code{
+    background:var(--ink-3);border:1px solid var(--line);border-radius:8px;
+    margin:22px 0;overflow:hidden;
+  }
+  .code-bar{
+    display:flex;align-items:center;gap:8px;padding:9px 15px;
+    background:rgba(0,0,0,.22);border-bottom:1px solid var(--line);
+  }
+  .code-bar .dot{width:10px;height:10px;border-radius:50%;background:var(--line-soft)}
+  .code-bar .fname{font-family:var(--mono);font-size:.7rem;color:var(--paper-faint);margin-left:6px}
+  .code-bar .cell{margin-left:auto;font-family:var(--mono);font-size:.66rem;color:var(--teal-soft);letter-spacing:.05em}
+  pre{
+    font-family:var(--mono);font-size:.8rem;line-height:1.62;
+    padding:16px 18px;overflow-x:auto;color:#cdd3e0;
+  }
+  pre::-webkit-scrollbar{height:8px}
+  pre::-webkit-scrollbar-thumb{background:var(--line-soft);border-radius:4px}
+  .c-kw{color:#c98fd6}      /* keyword */
+  .c-fn{color:var(--teal-soft)}  /* function */
+  .c-str{color:var(--gold)}      /* string */
+  .c-num{color:#e0a878}     /* number */
+  .c-com{color:var(--paper-faint);font-style:italic} /* comment */
+  .c-var{color:#8fb8e8}     /* var */
+
+  /* analogy card — 역사학 비유 */
+  .analogy{
+    display:flex;gap:16px;align-items:flex-start;
+    border:1px solid var(--line);border-left:3px solid var(--gold);
+    border-radius:8px;padding:18px 22px;margin:22px 0;background:var(--ink-2);
+  }
+  .analogy .seal{
+    flex-shrink:0;width:44px;height:44px;border:1.5px solid var(--gold);border-radius:8px;
+    background:rgba(201,168,106,.06);display:grid;place-items:center;
+  }
+  .analogy .seal svg{width:22px;height:22px;stroke:var(--gold);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .analogy .body{flex:1}
+  .analogy .body .term{font-family:var(--serif);font-weight:600;color:var(--gold);font-size:1rem}
+  .analogy .body p{margin-top:4px;color:var(--paper-dim);font-size:.94rem;max-width:none}
+
+  /* before/after 대비 박스 */
+  .contrast{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+  @media(max-width:720px){.contrast{grid-template-columns:1fr}}
+  .contrast .box{border:1px solid var(--line);border-radius:8px;padding:18px 20px;background:var(--ink-2)}
+  .contrast .box.bad{border-top:3px solid var(--cinnabar)}
+  .contrast .box.good{border-top:3px solid var(--teal)}
+  .contrast .box .tag{font-family:var(--mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;margin-bottom:10px}
+  .contrast .box.bad .tag{color:var(--cinnabar-soft)}
+  .contrast .box.good .tag{color:var(--teal-soft)}
+  .contrast .box h4{font-size:.98rem;font-weight:700;color:var(--paper);margin-bottom:8px}
+  .contrast .box p{margin-top:6px;font-size:.9rem;max-width:none}
+  .contrast .box .mono{font-family:var(--mono);font-size:.76rem;color:var(--paper-dim);background:var(--ink-3);padding:8px 10px;border-radius:5px;margin-top:10px;white-space:pre-wrap;line-height:1.5}
+
+  /* github link */
+  .ghlink{
+    display:inline-flex;align-items:center;gap:9px;margin-top:24px;
+    font-family:var(--mono);font-size:.8rem;color:var(--paper-dim);
+    text-decoration:none;border:1px solid var(--line);border-radius:7px;
+    padding:9px 15px;transition:all .16s ease;
+  }
+  .ghlink:hover{border-color:var(--teal);color:var(--paper);background:rgba(74,157,142,.06)}
+  .ghlink svg{width:16px;height:16px;fill:currentColor;flex-shrink:0}
+  .ghlink .arrow{color:var(--teal-soft)}
+
+  /* 보조자료로 가는 링크 — .ghlink 옆에 청록으로 나란히 선다.
+     같은 사이트 안이므로 새 탭을 열지 않는다 (보조자료에 돌아오는 링크가 있다) */
+  .sublink{
+    display:inline-flex;align-items:center;gap:9px;margin:24px 0 0 10px;
+    font-family:var(--mono);font-size:.8rem;color:var(--teal-soft);
+    text-decoration:none;border:1px solid var(--teal);border-radius:7px;
+    padding:9px 15px;background:rgba(74,157,142,.06);transition:all .16s ease;
+  }
+  .sublink:hover{background:rgba(74,157,142,.14);color:var(--paper)}
+  .sublink svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.7;fill:none;flex-shrink:0}
+  .sublink .arrow{color:var(--teal)}
+  @media(max-width:640px){.sublink{margin-left:0}}
+
+  /* meta list */
+  .metalist{list-style:none;margin:22px 0}
+  .metalist li{padding:9px 0;border-bottom:1px solid var(--line);display:flex;gap:16px;color:var(--paper-dim);font-size:.95rem}
+  .metalist li .k{font-family:var(--mono);font-size:.72rem;color:var(--teal-soft);min-width:130px;flex-shrink:0;letter-spacing:.04em;padding-top:3px}
+  .metalist li .v{flex:1}
+  .metalist li .v code{font-family:var(--mono);font-size:.82rem;color:var(--gold)}
+
+  /* ---------- HERO ---------- */
+  #hero{background:radial-gradient(ellipse at 20% 10%,rgba(193,83,58,.09),transparent 55%),radial-gradient(ellipse at 90% 90%,rgba(74,157,142,.08),transparent 50%),var(--ink)}
+  #hero .kicker{font-family:var(--mono);font-size:.74rem;letter-spacing:.28em;text-transform:uppercase;color:var(--teal-soft);margin-bottom:26px}
+  #hero h1{font-size:clamp(2.3rem,6.2vw,4.6rem)}
+  #hero .sub{font-family:var(--serif);font-weight:400;font-size:clamp(1.1rem,2.6vw,1.7rem);color:var(--paper-dim);margin-top:20px;line-height:1.5}
+  #hero .meta-row{display:flex;flex-wrap:wrap;gap:26px;margin-top:44px;font-family:var(--mono);font-size:.76rem;color:var(--paper-faint)}
+  #hero .meta-row span{display:flex;align-items:center;gap:8px}
+  #hero .meta-row span::before{content:"";width:6px;height:6px;background:var(--cinnabar);border-radius:50%}
+  #hero .scroll-hint{margin-top:56px;font-family:var(--mono);font-size:.7rem;color:var(--paper-faint);letter-spacing:.1em;display:flex;align-items:center;gap:10px}
+  #hero .scroll-hint .dn{animation:bob 1.8s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+
+  /* 발표자 — 표지에만 쓴다 */
+  #hero .author{
+    margin-top:38px;padding-left:20px;
+    border-left:2px solid var(--cinnabar);
+  }
+  #hero .author .nm{
+    font-family:var(--serif);font-weight:700;font-size:1.32rem;
+    color:var(--paper);letter-spacing:-.01em;
+  }
+  #hero .author .aff{
+    font-family:var(--sans);font-weight:300;font-size:1.02rem;
+    color:var(--paper-dim);margin-top:5px;
+  }
+  #hero .author .mail{
+    display:inline-block;margin-top:11px;
+    font-family:var(--mono);font-size:.9rem;color:var(--teal-soft);
+    text-decoration:none;border-bottom:1px solid transparent;transition:border-color .16s ease;
+  }
+  #hero .author .mail:hover{border-bottom-color:var(--teal-soft)}
+  #hero .author .welcome{
+    display:block;margin-top:13px;
+    font-family:var(--serif);font-style:italic;font-size:1.02rem;color:var(--gold);
+  }
+
+  /* ---------- PIPELINE DIAGRAM (signature) ---------- */
+  .pipe{margin:36px 0 10px}
+  .pipe-cols{display:grid;grid-template-columns:1fr 60px 1fr;gap:0;align-items:start}
+  @media(max-width:760px){.pipe-cols{grid-template-columns:1fr;gap:20px}}
+  .pipe-panel{border:1px solid var(--line-soft);border-radius:14px;padding:22px 20px 26px;background:var(--ink-2);position:relative}
+  .pipe-panel .phead{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--paper-dim);margin-bottom:18px;display:flex;align-items:center;gap:9px}
+  .pipe-panel .phead .badge{font-family:var(--serif);font-weight:700;font-size:.9rem;color:var(--ink);background:var(--paper-dim);width:22px;height:22px;border-radius:5px;display:grid;place-items:center}
+  .pipe-panel.b .phead .badge{background:var(--teal);color:var(--ink)}
+  .pipe-panel.b .phead{color:var(--teal-soft)}
+
+  .pnode{
+    display:block;border:1px solid var(--line-soft);border-radius:9px;
+    padding:12px 16px;margin:9px 0;background:var(--ink-3);
+    color:var(--paper);font-size:.92rem;font-weight:400;text-decoration:none;
+    position:relative;transition:all .16s ease;cursor:pointer;text-align:center;
+  }
+  .pnode .st{font-family:var(--mono);font-size:.6rem;color:var(--paper-faint);letter-spacing:.1em;display:block;margin-bottom:3px}
+  .pnode:hover{border-color:var(--cinnabar);background:rgba(193,83,58,.08);transform:translateX(2px)}
+  .pnode:hover .st{color:var(--cinnabar-soft)}
+  .pipe-panel.b .pnode:hover{border-color:var(--teal)}
+  .pipe-panel.b .pnode:hover .st{color:var(--teal-soft)}
+  .pnode.hinge{border:1.5px solid var(--teal);background:rgba(74,157,142,.1)}
+  .pnode.hinge .st{color:var(--teal-soft)}
+  .parrow{text-align:center;color:var(--paper-faint);font-size:.85rem;line-height:.5;margin:-2px 0}
+  .pipe-bridge{display:flex;align-items:center;justify-content:center;padding-top:60px}
+  .pipe-bridge svg{width:100%;height:auto}
+  @media(max-width:760px){.pipe-bridge{padding:0;transform:rotate(90deg)}}
+  .pipe-cap{font-family:var(--mono);font-size:.72rem;color:var(--paper-faint);text-align:center;margin-top:20px;letter-spacing:.03em}
+
+  /* journey mini-map */
+  .journey{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin:30px 0}
+  .journey a{
+    border:1px solid var(--line);border-radius:8px;padding:14px;text-decoration:none;
+    background:var(--ink-2);transition:all .16s ease;display:block;
+  }
+  .journey a:hover{border-color:var(--cinnabar);transform:translateY(-2px)}
+  .journey a.pivot:hover{border-color:var(--teal)}
+  .journey a .jn{font-family:var(--serif);font-weight:700;font-size:1.4rem;color:var(--line-soft)}
+  .journey a.pivot .jn{color:var(--teal)}
+  .journey a:hover .jn{color:var(--cinnabar)}
+  .journey a.pivot:hover .jn{color:var(--teal-soft)}
+  .journey a .jt{font-size:.82rem;color:var(--paper-dim);margin-top:4px;line-height:1.4}
+  .journey a .jstar{color:var(--gold);font-size:.7rem}
+
+  /* stack grid */
+  .stackgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin:24px 0}
+  .stackcard{border:1px solid var(--line);border-radius:8px;padding:16px;background:var(--ink-2)}
+  .stackcard .sk{font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--paper-faint);margin-bottom:7px}
+  .stackcard .sv{font-family:var(--mono);color:var(--teal-soft);font-size:.92rem;font-weight:500}
+  .stackcard .sd{font-size:.8rem;color:var(--paper-dim);margin-top:6px}
+
+  /* pull quote */
+  .pull{font-family:var(--serif);font-weight:600;font-size:clamp(1.4rem,3.2vw,2.1rem);line-height:1.45;color:var(--paper);margin:30px 0;padding-left:26px;border-left:3px solid var(--cinnabar)}
+  .pull .accent{color:var(--cinnabar-soft)}
+
+  /* footer / resources */
+  .reslist{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:26px 0}
+  @media(max-width:640px){.reslist{grid-template-columns:1fr}}
+  .rescard{border:1px solid var(--line);border-radius:8px;padding:18px 20px;background:var(--ink-2);text-decoration:none;display:block;transition:all .16s ease}
+  .rescard:hover{border-color:var(--teal);background:rgba(74,157,142,.05)}
+  .rescard .rt{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-soft);margin-bottom:8px}
+  .rescard .rn{color:var(--paper);font-size:.95rem;font-weight:500;word-break:break-all}
+  .rescard .rd{color:var(--paper-dim);font-size:.82rem;margin-top:6px}
+
+  /* prep note */
+  .prep{border:1px dashed var(--line-soft);border-radius:8px;padding:20px 24px;margin:22px 0;background:rgba(201,168,106,.04)}
+  .prep .pt{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+  .prep ol{margin-left:20px;color:var(--paper-dim)}
+  .prep ol li{margin:6px 0;font-size:.92rem}
+  .prep ol li code{font-family:var(--mono);font-size:.82rem;color:var(--teal-soft);background:var(--ink-3);padding:1px 6px;border-radius:4px}
+
+  /* ---------- FOOTNOTE — 번호 위에 올리면 서지 팝업 ---------- */
+  .fn{
+    position:relative;display:inline-block;
+    font-family:var(--mono);font-size:.6rem;font-weight:500;
+    color:var(--gold);vertical-align:super;cursor:help;outline:none;
+    margin-left:1px;padding:0 1px;border-radius:3px;
+    transition:color .14s ease,background .14s ease;
+  }
+  .fn::before{content:"["}
+  .fn::after{content:"]"}
+  .fn:hover,.fn:focus-visible{color:var(--paper);background:rgba(201,168,106,.18)}
+  .fnpop{
+    position:absolute;left:50%;bottom:calc(100% + 11px);
+    transform:translateX(calc(-50% + var(--sx,0px))) translateY(5px);
+    width:350px;max-width:76vw;z-index:55;
+    background:var(--ink-3);border:1px solid var(--line-soft);
+    border-left:3px solid var(--gold);border-radius:9px;padding:15px 17px;
+    box-shadow:0 16px 38px rgba(0,0,0,.55);
+    opacity:0;visibility:hidden;pointer-events:none;
+    transition:opacity .17s ease,transform .17s ease,visibility .17s;
+    text-align:left;vertical-align:baseline;white-space:normal;
+  }
+  .fn:hover .fnpop,.fn:focus .fnpop,.fn:focus-within .fnpop{
+    opacity:1;visibility:visible;transform:translateX(calc(-50% + var(--sx,0px))) translateY(0);
+  }
+  /* 화살표는 팝업이 밀린 만큼 되밀어 각주 번호를 계속 가리킨다 */
+  .fnpop::after{
+    content:"";position:absolute;top:100%;left:calc(50% - var(--sx,0px));margin-left:-7px;
+    border:7px solid transparent;border-top-color:var(--line-soft);
+  }
+  .fnpop .ft{display:block;font-family:var(--sans);font-size:.85rem;font-weight:500;color:var(--paper);line-height:1.45;letter-spacing:0}
+  .fnpop .fa{display:block;font-family:var(--mono);font-size:.65rem;color:var(--teal-soft);margin-top:7px;letter-spacing:.04em}
+  .fnpop .fd{display:block;font-family:var(--sans);font-size:.79rem;font-weight:300;color:var(--paper-dim);line-height:1.65;margin-top:10px;letter-spacing:0}
+  .fnpop .fl{display:block;font-family:var(--mono);font-size:.63rem;color:var(--paper-faint);margin-top:10px;padding-top:9px;border-top:1px solid var(--line);letter-spacing:.02em}
+  /* 좌우 넘침은 아래 스크립트가 --sx 로 보정한다 (.edge 는 표식일 뿐) */
+  @media(max-width:720px){.fnpop{width:min(304px,76vw)}}
+
+  /* ---------- ① 가짜 답변 카드 · 출처 검증 ---------- */
+  .aicard{
+    border:1px solid var(--line);border-radius:12px;background:var(--ink-2);
+    margin:34px 0 0;overflow:hidden;max-width:780px;
+  }
+  .aicard .ahead{
+    display:flex;align-items:center;gap:12px;padding:13px 20px;
+    border-bottom:1px solid var(--line);background:rgba(0,0,0,.18);
+  }
+  .aicard .ava{
+    width:26px;height:26px;border-radius:7px;background:var(--line-soft);
+    display:grid;place-items:center;font-family:var(--serif);font-weight:700;
+    font-size:.78rem;color:var(--paper-dim);flex-shrink:0;
+  }
+  .aicard .who{font-family:var(--mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--paper-faint)}
+  .aicard .qq{margin-left:auto;font-size:.82rem;color:var(--paper-dim);font-style:italic}
+  @media(max-width:720px){.aicard .qq{display:none}}
+  .aicard .abody{padding:24px 26px 26px}
+  .aicard .abody p{margin:0;max-width:none;font-size:1.02rem;line-height:1.9;color:var(--paper);font-weight:300}
+  .cit{
+    font-family:var(--mono);font-size:.6rem;color:var(--teal-soft);
+    vertical-align:super;margin-left:2px;transition:color .45s ease;
+  }
+  .cit::before{content:"["}.cit::after{content:"]"}
+  .aicard.busted .cit{color:var(--cinnabar-soft)}
+
+  .probe{margin:22px 0 0}
+  .probebtn{
+    font-family:var(--mono);font-size:.78rem;letter-spacing:.06em;
+    color:var(--paper);background:var(--ink-2);border:1px solid var(--line-soft);
+    border-radius:8px;padding:11px 20px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:10px;transition:all .16s ease;
+  }
+  .probebtn:hover{border-color:var(--cinnabar);background:rgba(193,83,58,.08)}
+  .probebtn .ic{color:var(--cinnabar-soft);font-size:.9rem}
+
+  .checks{margin:20px 0 0;max-width:780px}
+  .chk{
+    display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+    border:1px solid var(--line);border-left:3px solid var(--cinnabar);
+    border-radius:8px;padding:13px 18px;margin-bottom:9px;background:var(--ink-2);
+    opacity:0;transform:translateY(8px);transition:opacity .42s ease,transform .42s ease;
+  }
+  .chk.show{opacity:1;transform:translateY(0)}
+  .chk .cn{font-family:var(--mono);font-size:.72rem;color:var(--cinnabar-soft);flex-shrink:0}
+  .chk .ct{font-size:.9rem;color:var(--paper-dim);flex:1;min-width:220px;text-decoration:line-through;text-decoration-color:var(--paper-faint)}
+  .chk .cv{font-family:var(--mono);font-size:.72rem;color:var(--cinnabar-soft);letter-spacing:.03em;flex-shrink:0}
+
+  .verdict{
+    font-family:var(--serif);font-weight:700;
+    font-size:clamp(1.6rem,4vw,2.6rem);line-height:1.35;color:var(--paper);
+    margin:34px 0 0;padding-left:26px;border-left:3px solid var(--cinnabar);
+    opacity:0;transform:translateY(10px);transition:opacity .5s ease,transform .5s ease;
+  }
+  .verdict.show{opacity:1;transform:translateY(0)}
+  .verdict .accent{color:var(--cinnabar-soft)}
+  .disclaim{
+    font-family:var(--mono);font-size:.7rem;color:var(--paper-faint);margin-top:22px;
+    opacity:0;transition:opacity .5s ease;
+  }
+  .disclaim.show{opacity:1}
+
+  /* ---------- ② 경로 전환 · 흐름 애니메이션 ---------- */
+  .switch{display:inline-flex;border:1px solid var(--line-soft);border-radius:9px;overflow:hidden;margin:30px 0 0}
+  .switch .sw{
+    font-family:var(--mono);font-size:.76rem;letter-spacing:.06em;
+    padding:11px 24px;background:var(--ink-2);color:var(--paper-faint);
+    border:0;cursor:pointer;transition:all .18s ease;
+  }
+  .switch .sw+.sw{border-left:1px solid var(--line-soft)}
+  .switch .sw:hover{color:var(--paper-dim)}
+  .switch .sw.active{background:rgba(74,157,142,.15);color:var(--teal-soft)}
+  .switch .sw[data-mode="llm"].active{background:rgba(193,83,58,.15);color:var(--cinnabar-soft)}
+
+  .flow{margin:26px 0 0}
+  .track{display:none;align-items:stretch;flex-wrap:wrap}
+  .track.on{display:flex}
+  .fnode{
+    flex:1 1 0;min-width:118px;border:1px solid var(--line);border-radius:10px;
+    background:var(--ink-2);padding:17px 13px 16px;text-align:center;
+    opacity:0;transform:translateY(10px);
+    transition:opacity .42s ease,transform .42s ease;
+  }
+  .fnode.in{opacity:1;transform:translateY(0)}
+  .fnode .lt{font-family:var(--serif);font-weight:700;font-size:1.6rem;line-height:1;color:var(--teal)}
+  .fnode .nm{font-size:.92rem;color:var(--paper);margin-top:9px;font-weight:400}
+  .fnode .sub{font-family:var(--mono);font-size:.56rem;letter-spacing:.13em;text-transform:uppercase;color:var(--paper-faint);margin-top:6px}
+  .fnode.start{border-top:3px solid var(--line-soft)}
+  .fnode.bad{border-top:3px solid var(--cinnabar)}
+  .fnode.good{border-top:3px solid var(--teal)}
+  .fnode .srcline{font-family:var(--mono);font-size:.6rem;margin-top:10px;letter-spacing:.04em;line-height:1.6}
+  .fnode .srcline.none{color:var(--cinnabar-soft)}
+  .fnode .srcline.has{color:var(--teal-soft)}
+  .farrow{
+    display:grid;place-items:center;padding:0 9px;color:var(--paper-faint);font-size:.95rem;
+    opacity:0;transition:opacity .42s ease;
+  }
+  .farrow.in{opacity:1}
+  @media(max-width:720px){
+    .track{flex-direction:column}
+    .farrow{padding:6px 0;transform:rotate(90deg)}
+  }
+  .flowcap{
+    font-family:var(--mono);font-size:.75rem;color:var(--paper-faint);
+    margin-top:22px;letter-spacing:.03em;line-height:1.8;min-height:2.6em;
+  }
+  .flowcap .em{color:var(--teal-soft)}
+  .flowcap .bad{color:var(--cinnabar-soft)}
+
+  /* ---------- ③ 사슬 점등 ---------- */
+  .chain .lk{transition:background .5s ease,box-shadow .5s ease}
+  .chain .lk .fail{
+    display:block;font-size:.68rem;color:var(--cinnabar-soft);margin-top:9px;line-height:1.5;
+    opacity:0;transform:translateY(5px);
+    transition:opacity .42s ease,transform .42s ease;
+  }
+  .chain .lk.lit{background:rgba(193,83,58,.10);box-shadow:inset 0 2px 0 var(--cinnabar)}
+  .chain .lk.lit .cn{color:var(--paper);font-weight:500}
+  .chain .lk.lit .cs{color:var(--paper-faint)}
+  .chain .lk.lit .fail{opacity:1;transform:translateY(0)}
+  .pull.hold{opacity:0;transform:translateY(10px);transition:opacity .5s ease,transform .5s ease}
+  .pull.hold.show{opacity:1;transform:translateY(0)}
+
+  /* ---------- 일곱 마디 사슬 ---------- */
+  /* overflow:hidden 을 쓰지 않는다 — 칸 밖으로 뜨는 각주 팝업이 잘리기 때문.
+     모서리는 양 끝 칸에 직접 둥글리기를 준다. */
+  .chain{
+    display:flex;flex-wrap:wrap;margin:30px 0 0;
+    border:1px solid var(--line);border-radius:10px;
+    background:var(--ink-2);
+  }
+  .chain .lk:first-child{border-top-left-radius:10px;border-bottom-left-radius:10px}
+  .chain .lk:last-child{border-top-right-radius:10px;border-bottom-right-radius:10px}
+  .chain .lk{
+    flex:1 1 0;min-width:104px;padding:17px 8px 15px;text-align:center;
+    border-right:1px solid var(--line);
+  }
+  .chain .lk:last-child{border-right:0}
+  @media(max-width:720px){.chain .lk{flex:1 1 33%;border-bottom:1px solid var(--line)}}
+  .chain .lk .cn{display:block;font-size:.92rem;color:var(--paper-dim);font-weight:400}
+  .chain .lk .cs{display:block;font-family:var(--mono);font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:var(--paper-faint);margin-top:6px}
+  .chain .lk.believed{background:rgba(201,168,106,.11);box-shadow:inset 0 2px 0 var(--gold)}
+  .chain .lk.believed .cn{color:var(--gold);font-weight:500}
+  .chain .lk.believed .cs{color:rgba(201,168,106,.75)}
+  .chain-cap{font-family:var(--mono);font-size:.7rem;color:var(--paper-faint);text-align:center;margin-top:14px;letter-spacing:.03em;line-height:1.7}
+  .chain-cap .gold{color:var(--gold)}
+
+  /* ---------- ⑤ 완성된 답변 — ①의 카드와 짝을 이룬다 ---------- */
+  .aicard.sourced .ava{background:var(--teal);color:var(--ink)}
+  .aicard.sourced .who{color:var(--teal-soft)}
+  .aicard.sourced .cit{color:var(--teal-soft)}
+  .srcs{border-top:1px solid var(--line);padding:17px 26px 20px;background:rgba(74,157,142,.055)}
+  .srcs .sh{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--teal-soft);margin-bottom:12px}
+  .srcs .row{display:flex;gap:13px;align-items:baseline;padding:6px 0;color:var(--paper-dim)}
+  .srcs .row .ck{color:var(--teal-soft);flex-shrink:0}
+  .srcs .row .id{font-family:var(--mono);font-size:.8rem;color:var(--gold);flex-shrink:0;min-width:78px}
+
+  /* ---------- ⑥ 재료와 도구 — 선택과 그 이유 ---------- */
+  .picks{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:32px 0 0}
+  @media(max-width:760px){.picks{grid-template-columns:1fr}}
+  .pick{
+    border:1px solid var(--line);border-top:3px solid var(--teal);border-radius:12px;
+    background:var(--ink-2);padding:24px 26px 26px;
+  }
+  .pick .pk{font-family:var(--mono);font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--paper-faint)}
+  .pick .pv{font-family:var(--serif);font-weight:700;font-size:1.55rem;line-height:1.3;color:var(--paper);margin-top:11px}
+  .pick .pm{font-family:var(--mono);font-size:.76rem;color:var(--teal-soft);margin-top:9px}
+  .pick .why{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+  .pick .why .wl{font-family:var(--mono);font-size:.66rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+  .pick .why ul{list-style:none}
+  .pick .why li{display:flex;gap:10px;font-size:.98rem;color:var(--paper-dim);line-height:1.7;margin:7px 0}
+  .pick .why li::before{content:"—";color:var(--gold);flex-shrink:0}
+
+  /* ---------- 조판 지도 — 서체가 곧 역할 ---------- */
+  .typemap{border:1px solid var(--line);border-radius:10px;background:var(--ink-2);margin:28px 0 0;overflow:hidden}
+  .typemap .row{display:grid;grid-template-columns:190px 62px 1fr;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--line)}
+  .typemap .row:last-child{border-bottom:0}
+  .typemap .row.take{background:rgba(74,157,142,.09)}
+  .typemap .face{font-family:var(--mono);font-size:.82rem;color:var(--paper-dim)}
+  .typemap .row.take .face{color:var(--teal-soft);font-weight:500}
+  .typemap .pt{font-family:var(--mono);font-size:.8rem;color:var(--gold);text-align:right}
+  .typemap .role{font-size:.96rem;color:var(--paper-dim)}
+  .typemap .row.take .role{color:var(--paper);font-weight:500}
+  .typemap .role .mark{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;margin-left:10px}
+  .typemap .row.take .role .mark{color:var(--teal-soft)}
+  .typemap .row:not(.take) .role .mark{color:var(--paper-faint)}
+  @media(max-width:720px){.typemap .row{grid-template-columns:1fr 54px;gap:8px}.typemap .role{grid-column:1/-1}}
+
+  /* ---------- 페이지 번호 ---------- */
+  .pageno{
+    position:fixed;right:26px;bottom:22px;z-index:40;
+    font-family:var(--mono);font-size:.82rem;letter-spacing:.1em;
+    color:var(--paper-faint);background:rgba(22,27,38,.82);
+    border:1px solid var(--line);border-radius:8px;padding:8px 14px;
+    display:flex;align-items:baseline;gap:7px;backdrop-filter:blur(6px);
+    pointer-events:none;
+  }
+  .pageno .cur{color:var(--cinnabar-soft);font-size:1rem;font-weight:500}
+  .pageno .sep{opacity:.45}
+  @media(max-width:900px){.pageno{right:14px;bottom:14px;font-size:.74rem;padding:6px 11px}}
+
+  /* mobile nav toggle */
+  .navtoggle{display:none;position:fixed;top:14px;left:14px;z-index:60;background:var(--ink-2);border:1px solid var(--line);border-radius:7px;padding:9px 11px;cursor:pointer}
+  .navtoggle span{display:block;width:20px;height:2px;background:var(--paper);margin:4px 0}
+  @media(max-width:900px){
+    nav{transform:translateX(-100%);transition:transform .22s ease}
+    nav.open{transform:translateX(0)}
+    main{margin-left:0}
+    .navtoggle{display:block}
+    section{padding:78px 24px 70px}
+  }
+
+  /* ================================================================
+     가독성 보정 — 투사 환경 대응
+     위의 원래 규칙은 그대로 두고 여기서만 크기를 올린다.
+     되돌리려면 이 블록만 통째로 지우면 된다.
+     ================================================================ */
+
+  /* 본문·설명 텍스트 */
+  p{font-size:1.07rem;line-height:1.82;font-weight:400;max-width:720px}
+  .lead{font-size:1.3rem;line-height:1.76;font-weight:400;max-width:750px}
+  .summary{font-size:1.2rem;padding:16px 22px}
+  .eyebrow{font-size:.78rem}
+  h3{font-size:1.3rem}
+
+  /* 카드·박스 안 설명 */
+  .analogy .body .term{font-size:1.12rem}
+  .analogy .body p{font-size:1.02rem}
+  .contrast .box h4{font-size:1.1rem}
+  .contrast .box p{font-size:1rem;line-height:1.75}
+  .contrast .box .tag{font-size:.74rem}
+  .contrast .box .mono{font-size:.86rem}
+  .stackcard .sk{font-size:.72rem}
+  .stackcard .sv{font-size:1.03rem}
+  .stackcard .sd{font-size:.92rem}
+  .rescard .rt{font-size:.78rem}
+  .rescard .rn{font-size:1.04rem}
+  .rescard .rd{font-size:.92rem}
+  .metalist li{font-size:1.04rem}
+  .metalist li .k{font-size:.8rem;min-width:146px}
+  .prep .pt{font-size:.78rem}
+  .prep ol li{font-size:1.02rem}
+  .journey a .jt{font-size:.92rem}
+  .journey a .jstar{font-size:.78rem}
+  .pnode{font-size:1rem}
+  .pnode .st{font-size:.66rem}
+  .pipe-panel .phead{font-size:.8rem}
+  .pipe-cap{font-size:.84rem}
+  .steptag{font-size:.77rem}
+
+  /* 코드 — 실습에서 따라 읽어야 하므로 함께 키운다 */
+  pre{font-size:.9rem;line-height:1.68}
+  .code-bar .fname{font-size:.78rem}
+  .code-bar .cell{font-size:.74rem}
+
+  /* ① 가짜 답변 카드 */
+  .aicard .who{font-size:.74rem}
+  .aicard .qq{font-size:.92rem}
+  .aicard .abody p{font-size:1.16rem;line-height:1.92}
+  .cit{font-size:.68rem}
+  .chk .cn{font-size:.82rem}
+  .chk .ct{font-size:1.02rem}
+  .chk .cv{font-size:.82rem}
+  .disclaim{font-size:.8rem}
+
+  /* ② 경로 전환 */
+  .switch .sw{font-size:.86rem;padding:12px 26px}
+  .fnode .nm{font-size:1.03rem}
+  .fnode .sub{font-size:.63rem}
+  .fnode .lt{font-size:1.8rem}
+  .fnode .srcline{font-size:.72rem}
+  .flowcap{font-size:.9rem}
+
+  /* ③ 사슬 */
+  .chain .lk .cn{font-size:1.04rem}
+  .chain .lk .cs{font-size:.62rem}
+  .chain .lk .fail{font-size:.82rem}
+  .chain-cap{font-size:.84rem}
+  .probebtn{font-size:.87rem;padding:12px 22px}
+
+  /* 각주 팝업 */
+  .fn{font-size:.68rem}
+  .fnpop{width:390px;padding:17px 19px}
+  .fnpop .ft{font-size:.95rem}
+  .fnpop .fa{font-size:.74rem}
+  .fnpop .fd{font-size:.89rem;line-height:1.7}
+  .fnpop .fl{font-size:.71rem}
+
+  /* 사이드바 */
+  nav a{font-size:.95rem}
+  nav a .num{font-size:.78rem}
+  .brand .ktitle{font-size:1.18rem}
+  .brand .etitle{font-size:.68rem}
+
+  /* 그룹 제목 — 원래 .6rem·가장 흐린 색이라 거의 보이지 않았다 */
+  .navgroup{padding-top:18px}
+  .navgroup+.navgroup{border-top:1px solid var(--line);margin-top:10px}
+  .navgroup .label{
+    font-size:.82rem;
+    letter-spacing:.14em;
+    color:var(--paper-dim);
+    font-weight:500;
+    padding-bottom:11px;
+  }
+
+  /* ================================================================
+     라이트 모드 — 보조자료 theme.css 의 낮 팔레트와 같은 값
+     색 이름은 그대로 두고 값만 바꾼다. 변수로만 쓴 컴포넌트는
+     전부 자동으로 따라온다.
+
+     주의 — 다크에서 `-soft`는 더 밝은 값이지만,
+     라이트에서는 더 어두운 값이어야 대비가 산다.
+     ================================================================ */
+  :root[data-theme="light"]{
+    --ink:#f4f0e6;          /* 종이빛 배경 */
+    --ink-2:#ebe5d6;        /* 카드 */
+    --ink-3:#e3dcc9;        /* 코드·패널 */
+    --paper:#1b1e2a;        /* 먹빛 본문 */
+    --paper-dim:#4b5061;
+    --paper-faint:#7d7969;
+    --cinnabar:#b0402a;
+    --cinnabar-soft:#963421;
+    --teal:#35755e;
+    --teal-soft:#265f4a;
+    --gold:#8a6a28;
+    --line:#dbd3bf;
+    --line-soft:#c6bca2;
+  }
+
+  /* 변수를 안 거치고 어두운 배경을 전제한 자리들 — 여기서 되돌린다 */
+  :root[data-theme="light"] body{background:var(--ink)}
+  :root[data-theme="light"] nav a:hover{background:rgba(0,0,0,.03)}
+  :root[data-theme="light"] .code-bar{background:rgba(0,0,0,.05)}
+  :root[data-theme="light"] .aicard .ahead{background:rgba(0,0,0,.04)}
+  :root[data-theme="light"] pre{color:#2a2f3d}
+  :root[data-theme="light"] .c-kw{color:#8b3fa0}
+  :root[data-theme="light"] .c-num{color:#a35a1e}
+  :root[data-theme="light"] .c-var{color:#2f5f96}
+  :root[data-theme="light"] #hero{
+    background:radial-gradient(ellipse at 20% 10%,rgba(176,64,42,.10),transparent 55%),
+               radial-gradient(ellipse at 90% 90%,rgba(53,117,94,.09),transparent 50%),var(--ink);
+  }
+  :root[data-theme="light"] .fnpop{box-shadow:0 10px 28px rgba(60,50,30,.18)}
+  :root[data-theme="light"] .pageno{background:rgba(244,240,230,.86)}
+  :root[data-theme="light"] .chain .lk.believed .cs{color:rgba(138,106,40,.85)}
+  /* 저채도 강조 타일 — 낮 팔레트 색상값으로 다시 태운다 */
+  :root[data-theme="light"] nav a.active{background:rgba(176,64,42,.08)}
+  :root[data-theme="light"] nav a.pivot.active{background:rgba(53,117,94,.10)}
+  :root[data-theme="light"] .summary{background:rgba(176,64,42,.06)}
+  :root[data-theme="light"] .summary.pivot{background:rgba(53,117,94,.07)}
+  :root[data-theme="light"] .pnode:hover{background:rgba(176,64,42,.08)}
+  :root[data-theme="light"] .pnode.hinge{background:rgba(53,117,94,.10)}
+  :root[data-theme="light"] .chain .lk.lit{background:rgba(176,64,42,.09)}
+  :root[data-theme="light"] .chain .lk.believed{background:rgba(138,106,40,.13)}
+  :root[data-theme="light"] .switch .sw.active{background:rgba(53,117,94,.14)}
+  :root[data-theme="light"] .switch .sw[data-mode="llm"].active{background:rgba(176,64,42,.14)}
+  :root[data-theme="light"] .srcs{background:rgba(53,117,94,.06)}
+  :root[data-theme="light"] .typemap .row.take{background:rgba(53,117,94,.10)}
+  :root[data-theme="light"] .probebtn:hover{background:rgba(176,64,42,.08)}
+  :root[data-theme="light"] .ghlink:hover,
+  :root[data-theme="light"] .rescard:hover{background:rgba(53,117,94,.07)}
+  :root[data-theme="light"] .fn:hover,
+  :root[data-theme="light"] .fn:focus-visible{background:rgba(138,106,40,.20)}
+  :root[data-theme="light"] .prep{background:rgba(138,106,40,.05)}
+  :root[data-theme="light"] .analogy .seal{background:rgba(138,106,40,.07)}
+  /* 다이어그램 SVG 는 stroke 를 직접 갖고 있다 */
+  :root[data-theme="light"] .pipe-bridge svg{stroke:#35755e}
+
+  /* ================================================================
+     언어 전환 — 두 언어를 다 심어 두고 CSS 로 하나만 보인다.
+     자바스크립트(html/ui.js)는 html[data-lang] 만 바꾼다.
+     ================================================================ */
+  :root[data-lang="ko"] [lang="en"]{display:none!important}
+  :root[data-lang="en"] [lang="ko"]{display:none!important}
+  /* 영문은 자간을 넓게, 한글은 좁게 — 한글에 영문 기준을 쓰면 자소가 흩어진다 */
+  :root[data-lang="en"] .navgroup .label,
+  :root[data-lang="en"] .eyebrow,
+  :root[data-lang="en"] .steptag{letter-spacing:.18em}
+
+  /* ================================================================
+     테마·언어 토글 — 사이드바 머리에 붙는다.
+     ui.js 가 .topbar 를 찾아 꽂으므로 클래스 이름을 맞춰 둔다.
+     ================================================================ */
+  .topbar{display:flex;align-items:center;gap:8px;padding:0 26px 16px;margin-bottom:6px;border-bottom:1px solid var(--line)}
+  .tgroup{display:flex;align-items:center;gap:8px}
+  .tg{
+    display:inline-flex;align-items:center;gap:6px;
+    font-family:var(--mono);font-size:.8rem;color:var(--paper-dim);
+    background:var(--ink-3);border:1px solid var(--line-soft);border-radius:8px;
+    padding:6px 12px;cursor:pointer;transition:all .16s ease;line-height:1;
+  }
+  .tg:hover{border-color:var(--teal);color:var(--paper)}
+  .tg .ic{font-size:.95rem}
+  .tg .sep{color:var(--line-soft)}
+  .tg .on{color:var(--paper);font-weight:700}
+  .tg .off{color:var(--paper-faint)}
+</style>
+</head>
+<body>
+
+<button class="navtoggle" id="navtoggle" aria-label="목차 열기"><span></span><span></span><span></span></button>
+
+<div class="pageno" id="pageno" aria-hidden="true"><span class="cur" id="pagecur">01</span><span class="sep">/</span><span class="tot" id="pagetot">19</span></div>
+
+<div class="wrap">
+
+  <!-- ============ SIDEBAR NAV ============ -->
+  <nav id="nav">
+    <div class="brand">
+      <div class="ktitle"><span lang="ko">반나절 만에 만드는<br>작동하는 RAG</span><span lang="en">Build a Working RAG<br>in Half a Day</span></div>
+      <div class="etitle">DH2026 · Workshop</div>
+    </div>
+
+    <!-- ui.js 가 여기에 테마·언어 버튼을 꽂는다 (querySelector('.topbar')) -->
+    <div class="topbar"></div>
+
+    <div class="navgroup">
+      <div class="label"><span lang="ko">기조</span><span lang="en">Keynote</span></div>
+      <a href="#hero"><span class="num">◆</span><span lang="ko">표지</span><span lang="en">Title</span></a>
+      <a href="#anxiety"><span class="num">·</span><span lang="ko">불안 — AI에 기대다</span><span lang="en">The unease — leaning on AI</span></a>
+      <a href="#rag"><span class="num">·</span><span lang="ko">RAG의 등장</span><span lang="en">Enter RAG</span></a>
+      <a href="#limits" class="pivot"><span class="num">·</span><span lang="ko">RAG는 만능인가</span><span lang="en">Is RAG a cure-all?</span></a>
+      <a href="#why"><span class="num">·</span><span lang="ko">무엇을 만드는가</span><span lang="en">What we build</span></a>
+      <a href="#material"><span class="num">·</span><span lang="ko">무엇으로 만드는가</span><span lang="en">What we build it with</span></a>
+    </div>
+
+    <div class="navgroup">
+      <div class="label"><span lang="ko">구조</span><span lang="en">Structure</span></div>
+      <a href="#what"><span class="num">·</span><span lang="ko">RAG란 무엇인가</span><span lang="en">What RAG is</span></a>
+      <a href="#journey"><span class="num">·</span><span lang="ko">오늘의 여정</span><span lang="en">Today's journey</span></a>
+    </div>
+
+    <div class="navgroup">
+      <div class="label"><span lang="ko">파이프라인</span><span lang="en">Pipeline</span></div>
+      <a href="#step1"><span class="num">01</span><span lang="ko">환경설정·자산준비</span><span lang="en">Setup &amp; assets</span></a>
+      <a href="#step2"><span class="num">02</span><span lang="ko">naive chunk 실패</span><span lang="en">Naive chunk fails</span></a>
+      <a href="#step3"><span class="num">03</span><span>PDF → XML ★</span></a>
+      <a href="#step4"><span class="num">04</span><span>XML → chunk</span></a>
+      <a href="#step5"><span class="num">05</span><span>Chunk → Vector</span></a>
+      <a href="#step6" class="pivot"><span class="num">06</span><span lang="ko">Vector DB 구축</span><span lang="en">Build the vector DB</span></a>
+      <a href="#step7"><span class="num">07</span><span>Query → Vector</span></a>
+      <a href="#step8"><span class="num">08</span><span lang="ko">Distance 계산</span><span lang="en">Distance by hand</span></a>
+      <a href="#step9"><span class="num">09</span><span lang="ko">검색 + 전거</span><span lang="en">Retrieval + provenance</span></a>
+      <a href="#step10"><span class="num">10</span><span lang="ko">생성 + 전거</span><span lang="en">Generation + provenance</span></a>
+    </div>
+
+    <div class="navgroup">
+      <div class="label"><span lang="ko">마무리</span><span lang="en">Closing</span></div>
+      <a href="#message"><span class="num">·</span><span lang="ko">핵심 메시지</span><span lang="en">The core message</span></a>
+      <a href="#resources"><span class="num">·</span><span lang="ko">GitHub · 자료</span><span lang="en">GitHub · resources</span></a>
+    </div>
+  </nav>
+
+  <!-- ============ MAIN ============ -->
+  <main>
+
+    <!-- HERO -->
+    <section id="hero">
+      <div class="inner">
+        <div class="kicker">Build a Working RAG in Half a Day</div>
+        <h1><span lang="ko">반나절 만에 만드는<br>작동하는 RAG</span><span lang="en">Build a Working RAG<br>in Half a Day</span></h1>
+        <div class="sub"><span lang="ko">UN 정책 보고서와 LangChain으로,<br>답변마다 <span class="cinnabar-text">전거(典據)</span>가 따라붙는 파이프라인을 손으로 짓다</span><span lang="en">Hand-building a pipeline on UN policy reports with LangChain,<br>where every answer carries its <span class="cinnabar-text">provenance</span></span></div>
+        <div class="author">
+          <div class="nm">Kunha Kim</div>
+          <div class="aff"><span lang="ko">서강대학교 · Sogang University</span><span lang="en">Sogang University</span></div>
+          <a class="mail" href="mailto:littlekg87@gmail.com">littlekg87@gmail.com</a>
+          <span class="welcome">Any Co-work, Welcome!</span>
+        </div>
+
+        <div class="meta-row">
+          <span>DH2026</span>
+          <span>UN SDG Report 2025</span>
+          <span>LangChain · FAISS · Qwen3</span>
+          <span>Google Colab</span>
+        </div>
+        <div class="scroll-hint"><span class="dn">↓</span> <span lang="ko">사이드바 목차를 눌러 원하는 단계로 바로 이동</span><span lang="en">Use the sidebar to jump straight to any step</span></div>
+      </div>
+    </section>
+
+    <!-- ① ANXIETY — 고백 -->
+    <section id="anxiety">
+      <div class="inner">
+        <div class="eyebrow"><span lang="ko">기조 · 고백</span><span lang="en">Keynote · A confession</span></div>
+        <h2><span lang="ko">이 답변을 믿으시겠습니까?</span><span lang="en">Would you trust this answer?</span></h2>
+
+        <div class="aicard" id="aicard">
+          <div class="ahead">
+            <div class="ava">AI</div>
+            <div class="who">Generated answer</div>
+            <div class="qq">“How many people still live in extreme poverty?”</div>
+          </div>
+          <div class="abody">
+            <p lang="ko">2025년 기준 전 세계 극빈 인구는 약 <strong>6억 9,200만 명</strong>으로 추산됩니다.<span class="cit">1</span> 이는 팬데믹 이전 추세로의 회복이 지연된 결과이며, 사하라 이남 아프리카가 전체의 절반 이상을 차지합니다.<span class="cit">2</span> 현재 감소 속도가 유지될 경우 2030년 목표 달성은 어려울 것으로 전망됩니다.<span class="cit">3</span></p>
+            <p lang="en">As of 2025, roughly <strong>692 million people</strong> worldwide are estimated to live in extreme poverty.<span class="cit">1</span> This reflects a delayed recovery to pre-pandemic trends, with sub-Saharan Africa accounting for more than half of the total.<span class="cit">2</span> At the current rate of decline, the 2030 target is projected to be out of reach.<span class="cit">3</span></p>
+          </div>
+        </div>
+
+        <div class="probe">
+          <button class="probebtn" id="probeBtn" type="button"><span class="ic">◎</span><span id="probeLabel"><span lang="ko">출처 확인</span><span lang="en">Check the sources</span></span></button>
+        </div>
+
+        <div class="checks" id="checks">
+          <div class="chk"><span class="cn">[1]</span><span class="ct" lang="ko">Kim &amp; Park (2023), 「빈곤 통계의 재구성」, 『국제개발연구』 41(2)</span><span class="ct" lang="en">Kim &amp; Park (2023), “Reconstructing Poverty Statistics,” <i>Journal of International Development Studies</i> 41(2)</span><span class="cv" lang="ko">존재하지 않는 논문</span><span class="cv" lang="en">no such paper exists</span></div>
+          <div class="chk"><span class="cn">[2]</span><span class="ct" lang="ko">UN SDG Report 2025, Goal 1 §1.4 “지역별 분포”</span><span class="ct" lang="en">UN SDG Report 2025, Goal 1 §1.4 “Regional distribution”</span><span class="cv" lang="ko">실재하지 않는 절</span><span class="cv" lang="en">no such section</span></div>
+          <div class="chk"><span class="cn">[3]</span><span class="ct" lang="ko">같은 보고서, pp. 214–216</span><span class="ct" lang="en">Same report, pp. 214–216</span><span class="cv" lang="ko">문서 범위 밖</span><span class="cv" lang="en">beyond the document</span></div>
+        </div>
+
+        <div class="verdict" id="verdict"><span lang="ko">유려함은 <span class="accent">신뢰가 아니다.</span></span><span lang="en">Fluency is <span class="accent">not trustworthiness.</span></span></div>
+        <div class="disclaim" id="disclaim"><span lang="ko">※ 위 답변은 시연을 위해 구성한 예시입니다.</span><span lang="en">※ The answer above is a constructed example, shown for demonstration.</span></div>
+      </div>
+    </section>
+
+    <!-- ② RAG — 응답 -->
+    <section id="rag">
+      <div class="inner">
+        <div class="eyebrow teal"><span lang="ko">기조 · 응답</span><span lang="en">Keynote · The response</span></div>
+        <h2><span lang="ko">같은 질문, 두 개의 경로</span><span lang="en">One question, two paths</span></h2>
+        <p class="lead"><span lang="ko">이 불안에 대한 기술적 응답이 <strong class="teal-text">RAG</strong>다. 2020년 Lewis와 동료들이 이 개념을 본격적으로 제시한</span><span lang="en">The technical response to this unease is <strong class="teal-text">RAG</strong>. After Lewis and colleagues set out the concept in earnest in 2020,</span><span class="fn" tabindex="0">1<span class="fnpop"><span class="ft">Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</span><span class="fa">Lewis, Perez, Piktus et al. · NeurIPS 2020</span><span class="fd" lang="ko">검색기(retriever)와 생성기(generator)를 결합한 구조를 제안하고, 모수(parametric) 기억에만 의존하는 모델보다 사실성이 개선됨을 보였다. RAG라는 이름이 자리 잡은 출발점.</span><span class="fd" lang="en">Proposed an architecture combining a retriever with a generator, and showed improved factuality over models relying on parametric memory alone. The point at which the name RAG took hold.</span><span class="fl">arXiv:2005.11401</span></span></span><span lang="ko"> 이후, RAG는 빠르게 확산해 생성형 AI의 약점을 보완하는 핵심 기술로 자리 잡았다.</span><span lang="en"> RAG spread quickly and became a core technique for shoring up the weaknesses of generative AI.</span><span class="fn" tabindex="0">2<span class="fnpop"><span class="ft">Retrieval-Augmented Generation for Large Language Models: A Survey</span><span class="fa">Gao, Xiong, Gao et al. · arXiv 2023 (rev. 2024)</span><span class="fd" lang="ko">RAG 연구를 Naive → Advanced → Modular 세 세대로 정리한 대표 서베이. 이 계보가 존재한다는 사실 자체가, 초기 RAG의 문제가 모델 성능이 아니라 구조에 있었음을 보여준다.</span><span class="fd" lang="en">The standard survey, organising RAG research into three generations — Naive → Advanced → Modular. That this lineage exists at all shows the problem with early RAG lay in structure, not model performance.</span><span class="fl">arXiv:2312.10997</span></span></span></p>
+
+        <div class="switch" id="pathSwitch">
+          <button class="sw active" type="button" data-mode="llm"><span lang="ko">LLM 단독</span><span lang="en">LLM alone</span></button>
+          <button class="sw" type="button" data-mode="rag">RAG</button>
+        </div>
+
+        <div class="flow">
+          <div class="track on" data-track="llm">
+            <div class="fnode start"><div class="nm"><span lang="ko">질문</span><span lang="en">Question</span></div><div class="sub">Query</div></div>
+            <div class="farrow">→</div>
+            <div class="fnode"><div class="nm"><span lang="ko">모델의 기억</span><span lang="en">The model's memory</span></div><div class="sub">Parametric</div></div>
+            <div class="farrow">→</div>
+            <div class="fnode bad"><div class="nm"><span lang="ko">답변</span><span lang="en">Answer</span></div><div class="sub">Answer</div><div class="srcline none"><span lang="ko">출처 없음</span><span lang="en">no source</span></div></div>
+          </div>
+
+          <div class="track" data-track="rag">
+            <div class="fnode start"><div class="nm"><span lang="ko">질문</span><span lang="en">Question</span></div><div class="sub">Query</div></div>
+            <div class="farrow">→</div>
+            <div class="fnode"><div class="lt">R</div><div class="nm"><span lang="ko">검색한다</span><span lang="en">Retrieve</span></div><div class="sub">Retrieval</div></div>
+            <div class="farrow">→</div>
+            <div class="fnode"><div class="lt">A</div><div class="nm"><span lang="ko">증강한다</span><span lang="en">Augment</span></div><div class="sub">Augmented</div></div>
+            <div class="farrow">→</div>
+            <div class="fnode"><div class="lt">G</div><div class="nm"><span lang="ko">생성한다</span><span lang="en">Generate</span></div><div class="sub">Generation</div></div>
+            <div class="farrow">→</div>
+            <div class="fnode good"><div class="nm"><span lang="ko">답변</span><span lang="en">Answer</span></div><div class="sub">Answer</div><div class="srcline has">Goal 1 · pp. 10–11</div></div>
+          </div>
+        </div>
+
+        <div class="flowcap" id="flowCap"><span class="bad"><span lang="ko">그 사이에 무슨 일이 있었는지, 우리는 모른다.</span><span lang="en">What happened in between, we cannot know.</span></span></div>
+
+        <div class="pull"><span lang="ko">말한 뒤에 근거를 찾지 않는다.<br><span class="accent">근거를 찾은 뒤에 말한다.</span></span><span lang="en">We do not look for grounds after speaking.<br><span class="accent">We speak after finding the grounds.</span></span></div>
+      </div>
+    </section>
+
+    <!-- ③ LIMITS — 반전 -->
+    <section id="limits">
+      <div class="inner">
+        <div class="eyebrow"><span lang="ko">기조 · 반전</span><span lang="en">Keynote · The turn</span></div>
+        <h2><span lang="ko">그렇다면 RAG가 다 해결해 주는가</span><span lang="en">So does RAG solve everything?</span></h2>
+        <p class="lead"><span lang="ko">전혀 그렇지 않다. 오히려 최근 보고되는 연구들은 <strong>RAG가 기대만큼 튼튼하지 않다</strong>고 말한다.</span><span lang="en">Not at all. Recent studies report the opposite — that <strong>RAG is not as robust as we hoped</strong>.</span><span class="fn" tabindex="0">3<span class="fnpop"><span class="ft">Seven Failure Points When Engineering a Retrieval Augmented Generation System</span><span class="fa">Barnett, Kurniawan, Thudumu et al. · CAIN 2024</span><span class="fd" lang="ko">연구·교육·생의학 세 분야의 실제 구축 사례에서 실패 지점 일곱 개를 도출했다. 결정적인 것은 그 일곱 개가 모두 <b>모델 가중치가 아니라 파이프라인 단계</b>에 자리한다는 점이다.</span><span class="fd" lang="en">Derived seven failure points from real deployments across research, education and biomedicine. Decisively, all seven sit in <b>pipeline stages, not model weights</b>.</span><span class="fl">arXiv:2401.05856 · DOI 10.1145/3644815.3644945</span></span></span><span class="fn" tabindex="0">4<span class="fnpop"><span class="ft">A Systematic Literature Review of Retrieval-Augmented Generation: Techniques, Metrics, and Challenges</span><span class="fa">Brown, Roman, Devereux · arXiv 2025</span><span class="fd" lang="ko">2020년부터 2025년 5월까지 피인용 상위 128편을 PRISMA 방식으로 검토해, 평가 관행과 방법론의 공백을 정리했다. 가장 최신의 체계적 문헌고찰.</span><span class="fd" lang="en">A PRISMA review of the 128 most-cited papers from 2020 to May 2025, mapping gaps in evaluation practice and methodology. The most recent systematic review.</span><span class="fl">arXiv:2508.06401</span></span></span><span lang="ko"> 검색을 붙였는데도 환각이 사라지지 않는 사례가 축적되고 있고</span><span lang="en"> Cases keep accumulating where hallucination survives even with retrieval attached,</span><span class="fn" tabindex="0">5<span class="fnpop"><span class="ft">RAGTruth: A Hallucination Corpus for Developing Trustworthy Retrieval-Augmented Language Models</span><span class="fa">Niu, Wu, Zhu et al. · ACL 2024</span><span class="fd" lang="ko">검색해 온 근거와 어긋나거나 근거가 없는 주장을 <b>단어 단위로 주석</b>한 코퍼스. 검색을 붙여도 환각은 살아남는다는 사실을 실증했다.</span><span class="fd" lang="en">A corpus annotating, <b>word by word</b>, claims that contradict or lack the retrieved evidence. Demonstrated empirically that hallucination survives retrieval.</span><span class="fl">arXiv:2401.00396 · ACL 2024.acl-long.585</span></span></span><span lang="ko">, 그 원인은 RAG 바깥이 아니라 <strong class="cinnabar-text">RAG의 설계 그 자체</strong>에 있다.</span><span lang="en"> and the cause lies not outside RAG but in <strong class="cinnabar-text">the design of RAG itself</strong>.</span></p>
+
+        <div class="chain" id="chain">
+          <div class="lk"><span class="cn"><span lang="ko">자료</span><span lang="en">Source</span></span><span class="cs">Source</span><span class="fail"><span lang="ko">원천 오염</span><span lang="en">contaminated at source</span><span class="fn" tabindex="0">6<span class="fnpop"><span class="ft">How Does Data Shape AI Responses?: A Comparative Experiment on RAG Responses Using the Sejong Sillok Jiriji</span><span class="fa" lang="ko">「한문학논집」 74 · 2026 · 발표자 논문</span><span class="fa" lang="en"><i>Journal of Korean Literature in Chinese</i> 74 · 2026 · by the presenter</span><span class="fd" lang="ko">『세종실록지리지』를 재료로, <b>투입한 자료를 어떻게 구성하느냐가 RAG의 답변을 어떻게 바꾸는지</b> 비교 실험한 연구. 한국 고전 자료를 다루는 연구자에게 가장 가까운 사례다.</span><span class="fd" lang="en">A comparative experiment on the <i>Sejong Sillok Jiriji</i>, testing <b>how the way you structure the input data changes RAG's answers</b>. The closest case for researchers working with Korean classical sources.</span><span class="fl">DOI 10.17260/jklc.2026.74..49 · KCI ART003361051</span></span></span></span></div>
+          <div class="lk"><span class="cn"><span lang="ko">정제</span><span lang="en">Clean</span></span><span class="cs">Clean</span><span class="fail"><span lang="ko">조판 노이즈</span><span lang="en">typesetting noise</span></span></div>
+          <div class="lk"><span class="cn"><span lang="ko">청킹</span><span lang="en">Chunk</span></span><span class="cs">Chunk</span><span class="fail"><span lang="ko">의미 절단</span><span lang="en">meaning cut apart</span><span class="fn" tabindex="0">7<span class="fnpop"><span class="ft">Is Semantic Chunking Worth the Computational Cost?</span><span class="fa">Qu, Tu, Bao · Findings of NAACL 2025</span><span class="fd" lang="ko">문서 검색·근거 검색·답변 생성 전반에서 의미 기반 청킹이 치른 계산 비용만큼의 일관된 이득을 주지 못했다. 청킹은 중요하지만, <b>통념과 다른 방향으로</b> 중요하다.</span><span class="fd" lang="en">Across document retrieval, evidence retrieval and answer generation, semantic chunking did not deliver gains consistent with its computational cost. Chunking matters — but <b>not in the way received wisdom says</b>.</span><span class="fl">arXiv:2410.13070 · ACL 2025.findings-naacl.114</span></span></span></span></div>
+          <div class="lk believed"><span class="cn"><span lang="ko">임베딩</span><span lang="en">Embed</span></span><span class="cs">Embed</span><span class="fail"><span lang="ko">차원 상한</span><span lang="en">a ceiling on dimensions</span><span class="fn" tabindex="0">8<span class="fnpop"><span class="ft">On the Theoretical Limitations of Embedding-Based Retrieval</span><span class="fa">Weller, Boratko, Naim, Lee · Google DeepMind, 2025</span><span class="fd" lang="ko">임베딩 차원 d가 표현 가능한 상위 k 문서 조합을 원천적으로 제한함을 학습이론으로 증명하고, 아주 단순한 질의에서도 대부분의 단일 벡터 임베더가 recall@100 20%에 못 미침을 보였다. “더 좋은 임베딩 모델”이 해답이 아니라는 가장 단단한 근거.</span><span class="fd" lang="en">Proves via learning theory that embedding dimension d fundamentally limits which top-k document combinations are representable, and shows most single-vector embedders fall below 20% recall@100 even on very simple queries. The hardest evidence that “a better embedding model” is not the answer.</span><span class="fl">arXiv:2508.21038</span></span></span></span></div>
+          <div class="lk"><span class="cn"><span lang="ko">색인</span><span lang="en">Index</span></span><span class="cs">Index</span><span class="fail"><span lang="ko">구성에 좌우</span><span lang="en">hostage to configuration</span><span class="fn" tabindex="0">9<span class="fnpop"><span class="ft">Searching for Best Practices in Retrieval-Augmented Generation</span><span class="fa">Wang, Wang, Gao et al. (Fudan Univ.) · EMNLP 2024</span><span class="fd" lang="ko">질의 분류·검색·재순위·재구성·요약 등 각 단계를 하나씩 절제(ablation)하며 조합을 탐색했다. 전형적인 RAG 작업흐름은 여러 방식으로 실행될 수 있고, <b>그 조합에 따라 성능이 실질적으로 달라진다.</b></span><span class="fd" lang="en">Explored combinations by ablating each stage in turn — query classification, retrieval, reranking, repacking, summarisation. A typical RAG workflow can be executed many ways, and <b>performance changes substantially with the combination.</b></span><span class="fl">arXiv:2407.01219 · ACL 2024.emnlp-main.981</span></span></span></span></div>
+          <div class="lk"><span class="cn"><span lang="ko">검색</span><span lang="en">Retrieve</span></span><span class="cs">Retrieve</span><span class="fail"><span lang="ko">순서 붕괴</span><span lang="en">order collapses</span><span class="fn" tabindex="0">10<span class="fnpop"><span class="ft">Lost in the Middle: How Language Models Use Long Contexts</span><span class="fa">Liu, Lin, Hewitt et al. · TACL 2024</span><span class="fd" lang="ko">정답 근거가 문맥의 처음이나 끝에 있을 때 정확도가 가장 높고, <b>중간에 놓이면 급격히 떨어진다.</b> 검색 결과를 어떤 순서로 배열하느냐 하는 파이프라인 결정이 답변을 바꾼다.</span><span class="fd" lang="en">Accuracy is highest when the supporting evidence sits at the start or end of the context, and <b>drops sharply when it lands in the middle.</b> A pipeline decision — how you order retrieved results — changes the answer.</span><span class="fl">arXiv:2307.03172 · ACL 2024.tacl-1.9</span></span></span><br><span lang="ko">재순위 역효과</span><span lang="en">reranking backfires</span><span class="fn" tabindex="0">11<span class="fnpop"><span class="ft">Drowning in Documents: Consequences of Scaling Reranker Inference</span><span class="fa">Jacob et al. · ReNeuIR @ SIGIR 2025</span><span class="fd" lang="ko">재순위 모델은 일정 지점까지는 결과를 개선하지만, 더 많은 문서를 채점하게 하면 <b>1차 검색기보다도 성능이 떨어진다.</b> 단일 단계가 품질을 적극적으로 해칠 수 있음을 보여주는 사례.</span><span class="fd" lang="en">Rerankers improve results up to a point, but when made to score more documents they fall <b>below the first-stage retriever.</b> A case where a single stage actively harms quality.</span><span class="fl">arXiv:2411.11767</span></span></span></span></div>
+          <div class="lk believed"><span class="cn"><span lang="ko">생성</span><span lang="en">Generate</span></span><span class="cs">Generate</span><span class="fail"><span lang="ko">근거 무시</span><span lang="en">evidence ignored</span><span class="fn edge" tabindex="0">12<span class="fnpop"><span class="ft">Sufficient Context: A New Lens on Retrieval Augmented Generation Systems</span><span class="fa">Joren, Zhang, Ferng et al. · ICLR 2025</span><span class="fd" lang="ko">“검색이 근거를 충분히 주지 못한 실패”와 “근거를 받고도 모델이 못 쓴 실패”를 분리해 측정했다. Gemini 1.5 Pro·GPT-4o·Claude 3.5 같은 최상급 모델이 근거가 불충분할 때 기권하지 않고 <b>확신에 차서 틀린다.</b> LLM을 키운다고 검색 실패가 메워지지 않는다는 직접 증거.</span><span class="fd" lang="en">Separately measures “retrieval failed to supply enough evidence” from “the model had the evidence and still failed to use it.” Top-tier models — Gemini 1.5 Pro, GPT-4o, Claude 3.5 — do not abstain when evidence is insufficient; they are <b>confidently wrong.</b> Direct evidence that scaling the LLM does not paper over retrieval failure.</span><span class="fl">arXiv:2411.06037</span></span></span></span></div>
+        </div>
+        <div class="chain-cap" id="chainCap"><span lang="ko">일곱 개의 마디. 초기에는 <span class="gold">금색으로 표시된 둘</span>만 좋으면 된다고 믿었다.</span><span lang="en">Seven links. Early on we believed only <span class="gold">the two marked in gold</span> had to be good.</span></div>
+
+        <div class="probe">
+          <button class="probebtn" id="chainBtn" type="button"><span class="ic">◎</span><span id="chainLabel"><span lang="ko">실제로는?</span><span lang="en">And in fact?</span></span></button>
+        </div>
+
+        <div class="pull hold" id="chainPull"><span lang="ko">품질을 결정하는 것은 모델이 아니라,<br><span class="accent">모델과 모델 사이에 놓인 파이프라인</span>이다.</span><span lang="en">What determines quality is not the model, but<br><span class="accent">the pipeline laid between the models.</span></span></div>
+      </div>
+    </section>
+
+    <!-- ④ WHY — 결론 -->
+    <section id="why">
+      <div class="inner">
+        <div class="eyebrow"><span lang="ko">기조 · 결론</span><span lang="en">Keynote · The conclusion</span></div>
+        <h2><span lang="ko">무엇을 만드는가</span><span lang="en">What we build</span></h2>
+        <p class="lead"><span lang="ko">① 에서 무너졌던 그 카드를, <strong class="teal-text">근거가 붙은 형태</strong>로 다시 세운다.</span><span lang="en">We rebuild the card that collapsed in ①, this time <strong class="teal-text">with its grounds attached</strong>.</span></p>
+
+        <div class="aicard sourced">
+          <div class="ahead">
+            <div class="ava">✓</div>
+            <div class="who">Answer with provenance</div>
+            <div class="qq">“How many people still live in extreme poverty?”</div>
+          </div>
+          <div class="abody">
+            <p><span lang="ko">보고서가 제시한 극빈 인구 규모와 감소 추세를 <strong>아래 근거 문단에 있는 내용만으로</strong> 정리해 답한다.</span><span lang="en">Answers with the report's figures for the extreme-poverty population and its trend, <strong>using only what appears in the source passages below</strong>.</span></p>
+          </div>
+          <div class="srcs">
+            <div class="sh">Sources</div>
+            <div class="row"><span class="ck">✓</span><span class="id">G01-S01</span><span>Goal 1 No poverty · pp. 10–11</span></div>
+            <div class="row"><span class="ck">✓</span><span class="id">G01-S02</span><span>Goal 1 No poverty · pp. 10–11</span></div>
+            <div class="row"><span class="ck">✓</span><span class="id">G01-S03</span><span>Goal 1 No poverty · pp. 10–11</span></div>
+          </div>
+        </div>
+        <div class="disclaim show"><span lang="ko">※ STEP 10에서 실제로 생성되는 형태입니다. 답변 문장과 수치는 그때 모델이 만듭니다.</span><span lang="en">※ This is the shape actually produced in STEP 10. The sentences and figures are generated by the model at that point.</span></div>
+
+        <div class="contrast" style="margin-top:26px">
+          <div class="box bad">
+            <div class="tag"><span lang="ko">맡겨 두면</span><span lang="en">Left to itself</span></div>
+            <h4><span lang="ko">전거는 따라오지 않는다</span><span lang="en">Provenance does not follow</span></h4>
+            <p><span lang="ko">인용을 붙이도록 <em>설계된</em> 최신 모델조차 절반 가까운 경우에 근거가 불완전했다.</span><span lang="en">Even recent models <em>designed</em> to attach citations left the grounds incomplete in nearly half of cases.</span><span class="fn" tabindex="0">13<span class="fnpop"><span class="ft">Enabling Large Language Models to Generate Text with Citations</span><span class="fa">Gao, Yen, Yu, Chen (Princeton NLP) · EMNLP 2023</span><span class="fd" lang="ko">인용 품질을 재는 최초의 벤치마크 ALCE를 제안했다. ELI5 과제에서 최고 성능 모델조차 <b>약 절반의 경우 인용 근거가 온전하지 않았다.</b> 전거는 모델에 맡겨 두면 확보되지 않는다.</span><span class="fd" lang="en">Proposed ALCE, the first benchmark for citation quality. On the ELI5 task, even the best-performing model had <b>incomplete citation support in roughly half of cases.</b> Provenance is not secured by leaving it to the model.</span><span class="fl">arXiv:2305.14627 · ACL 2023.emnlp-main.398</span></span></span><span lang="ko"> 아카이브 자료에서도 기성 파이프라인만으로는 부족했다.</span><span lang="en"> With archival material too, an off-the-shelf pipeline was not enough.</span><span class="fn" tabindex="0">14<span class="fnpop"><span class="ft">FolkRAG: a retrieval-augmented generation system for cultural heritage materials</span><span class="fa">Kelly, Schild, Jafari · Neural Computing and Applications, 2025</span><span class="fd" lang="ko">미국 의회도서관 American Folklife Center 소장 자료를 대상으로 한 RAG. 파편화된 아카이브 메타데이터 탓에 기성 구성으로는 작동하지 않아 문장 단위 검색·HyDE·재순위·벡터저장소 조정을 모두 거쳐야 했다.<br><b>확인 범위:</b> 유료 접근이라 초록 수준까지만 검증함.</span><span class="fd" lang="en">A RAG system over holdings of the American Folklife Center at the Library of Congress. Fragmented archival metadata meant an off-the-shelf configuration would not work; sentence-level retrieval, HyDE, reranking and vector-store tuning were all required.<br><b>Extent verified:</b> paywalled — checked to abstract level only.</span><span class="fl">DOI 10.1007/s00521-025-11455-4</span></span></span></p>
+          </div>
+          <div class="box good">
+            <div class="tag"><span lang="ko">그러므로</span><span lang="en">Therefore</span></div>
+            <h4><span lang="ko">전거는 설계해서 얻는다</span><span lang="en">Provenance is obtained by design</span></h4>
+            <p><span lang="ko">메타데이터를 짜고, 청크마다 출처를 붙이고, 검색 결과에 실어 나르고, 답변 끝에 다시 꺼내 놓는다. 그 설계가 오늘 손으로 짓는 것이다.</span><span lang="en">You compose the metadata, attach a source to every chunk, carry it through the retrieval results, and lay it out again at the end of the answer. That design is what we build by hand today.</span></p>
+          </div>
+        </div>
+
+        <div class="pull"><span lang="ko">우리가 만드는 것은 챗봇이 아니라,<br><span class="accent">출처(典據)를 갖춘 RAG 파이프라인</span>이다.</span><span lang="en">What we build is not a chatbot, but<br><span class="accent">a RAG pipeline that carries its provenance.</span></span></div>
+      </div>
+    </section>
+
+    <!-- ⑥ MATERIAL — 무엇으로 만드는가 -->
+    <section id="material">
+      <div class="inner">
+        <div class="eyebrow teal"><span lang="ko">기조 · 재료와 도구</span><span lang="en">Keynote · Material and tools</span></div>
+        <h2><span lang="ko">무엇으로 만드는가</span><span lang="en">What we build it with</span></h2>
+
+        <div class="picks">
+          <div class="pick">
+            <div class="pk"><span lang="ko">재료 · Corpus</span><span lang="en">Material · Corpus</span></div>
+            <div class="pv">SDG Report 2025</div>
+            <div class="pm"><span lang="ko">UN Statistics Division · 51쪽 · PDF</span><span lang="en">UN Statistics Division · 51 pp. · PDF</span></div>
+            <div class="why">
+              <div class="wl"><span lang="ko">왜 이 문서인가</span><span lang="en">Why this document</span></div>
+              <ul>
+                <li><span lang="ko">가장 널리 알려진 국제 보고서다. 내용을 몰라도 <strong>무엇을 묻고 싶은지는 안다.</strong></span><span lang="en">The best-known international report there is. Even without knowing its contents, <strong>you know what you want to ask it.</strong></span></li>
+                <li><span lang="ko">목표·절·쪽이 뚜렷해 <strong>구조화가 가능하다.</strong> 실습 자료로서 이 점이 결정적이다.</span><span lang="en">Goals, sections and pages are clearly marked, so <strong>it can be structured.</strong> For a hands-on corpus, that is decisive.</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="pick">
+            <div class="pk"><span lang="ko">도구 · Framework</span><span lang="en">Tool · Framework</span></div>
+            <div class="pv">LangChain</div>
+            <div class="pm">FAISS · all-MiniLM-L6-v2 · Qwen3-0.6B</div>
+            <div class="why">
+              <div class="wl"><span lang="ko">왜 이 도구인가</span><span lang="en">Why this tool</span></div>
+              <ul>
+                <li><span lang="ko">RAG 파이프라인을 <strong>가장 간단하게 조립할 수 있는</strong> 코드다.</span><span lang="en">It is the code that lets you <strong>assemble a RAG pipeline most simply.</strong></span></li>
+                <li><span lang="ko">단계가 코드로 분리돼 있어 <strong>한 마디씩 열어 볼 수 있다.</strong> 오늘의 목적에 맞는다.</span><span lang="en">The stages are separated in code, so <strong>you can open them one link at a time.</strong> That suits today's purpose.</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary"><span lang="ko">그리고 우리는 <strong>일부러 느리게</strong> 간다. STEP 2에서는 실패하는 청킹을 먼저 만들어 보고, STEP 8에서는 FAISS가 한 줄로 해 주는 일을 <strong>손으로 계산</strong>한다.</span><span lang="en">And we go <strong>deliberately slowly</strong>. In STEP 2 we first build a chunking that fails; in STEP 8 we <strong>compute by hand</strong> what FAISS does in a single line.</span></div>
+
+        <p><span lang="ko">인용에 출처를 달고 검색된 근거 위에서만 진술하는 태도는 <strong>인문학이 오래 지켜 온 자료 비판의 규율</strong> 그 자체다. 실록이든 관보든 문학 텍스트든 — 다루는 자료는 달라도 규율은 같다. 오늘 하는 일은 그 규율을 기계에 이식하는 작업이다.</span><span lang="en">Citing your sources and asserting only on retrieved grounds <em>is</em> <strong>the discipline of source criticism the humanities have long kept</strong>. Veritable records, official gazettes, literary texts — the material differs, the discipline does not. What we do today is transplant that discipline into a machine.</span></p>
+      </div>
+    </section>
+
+    <!-- WHAT — signature pipeline diagram -->
+    <section id="what">
+      <div class="inner">
+        <div class="eyebrow teal"><span lang="ko">도입 · 개념</span><span lang="en">Introduction · The concept</span></div>
+        <h2><span lang="ko">RAG란 무엇인가 — 두 국면의 흐름</span><span lang="en">What RAG is — a flow in two phases</span></h2>
+        <p class="lead"><span lang="ko">RAG는 성격이 다른 두 국면으로 나뉜다. <strong class="teal-text">A. 자료 준비</strong>는 한 번만 하는 오프라인 작업이고, <strong class="teal-text">B. 질문·검색·답변</strong>은 질문할 때마다 반복되는 온라인 작업이다.</span><span lang="en">RAG divides into two phases of different character. <strong class="teal-text">A. Preparing the material</strong> is offline work done once; <strong class="teal-text">B. Question, retrieval, answer</strong> is online work repeated with every question.</span></p>
+
+        <div class="pipe">
+          <div class="pipe-cols">
+            <!-- A -->
+            <div class="pipe-panel a">
+              <div class="phead"><span class="badge">A</span> <span lang="ko">자료 준비 · 한 번만</span><span lang="en">Preparing the material · once</span></div>
+              <a class="pnode" href="#step1"><span class="st">STEP 1</span><span lang="ko">역사자료 선정</span><span lang="en">Choose the source</span></a>
+              <div class="parrow">▼</div>
+              <a class="pnode" href="#step3"><span class="st">STEP 2–3</span><span lang="ko">정제 · 구조화 (XML)</span><span lang="en">Clean · structure (XML)</span></a>
+              <div class="parrow">▼</div>
+              <a class="pnode" href="#step4"><span class="st">STEP 4</span>XML → chunk</a>
+              <div class="parrow">▼</div>
+              <a class="pnode" href="#step5"><span class="st">STEP 5</span>Chunk → Vector</a>
+              <div class="parrow">▼</div>
+              <a class="pnode hinge" href="#step6"><span class="st">STEP 6</span>Vector DB (FAISS)</a>
+            </div>
+
+            <!-- bridge -->
+            <div class="pipe-bridge">
+              <svg viewBox="0 0 60 200" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#4a9d8e" stroke-width="1.5">
+                <path d="M4 172 L30 172 L30 92 L56 92" />
+                <path d="M50 86 L58 92 L50 98" />
+              </svg>
+            </div>
+
+            <!-- B -->
+            <div class="pipe-panel b">
+              <div class="phead"><span class="badge">B</span> <span lang="ko">질문 · 검색 · 답변 · 매번</span><span lang="en">Question · retrieval · answer · every time</span></div>
+              <a class="pnode" href="#step7"><span class="st">STEP 7</span><span lang="ko">사용자 질문</span><span lang="en">A user's question</span></a>
+              <div class="parrow">▼</div>
+              <a class="pnode" href="#step7"><span class="st">STEP 7</span>Query → Vector</a>
+              <div class="parrow">▼</div>
+              <a class="pnode" href="#step9"><span class="st">STEP 8–9</span><span lang="ko">관련 청크 검색</span><span lang="en">Retrieve relevant chunks</span></a>
+              <div class="parrow">▼</div>
+              <a class="pnode" href="#step10"><span class="st">STEP 10</span><span lang="ko">LLM 답변 생성</span><span lang="en">LLM generates the answer</span></a>
+              <div class="parrow">▼</div>
+              <a class="pnode" href="#step10"><span class="st">STEP 10</span><span lang="ko">답변 + 전거 제시</span><span lang="en">Answer + provenance</span></a>
+            </div>
+          </div>
+          <div class="pipe-cap"><span lang="ko">각 상자를 누르면 해당 단계로 이동합니다 · <span style="color:var(--teal-soft)">청록 상자(FAISS)</span>가 A와 B를 잇는 경첩입니다</span><span lang="en">Click any box to jump to that step · the <span style="color:var(--teal-soft)">teal box (FAISS)</span> is the hinge joining A to B</span></div>
+        </div>
+
+        <div class="analogy">
+          <div class="seal"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 5v14M4 19h16M20 5v14"/><path d="M8 5v14M4 9h4M4 13h4M4 16h4"/></svg></div>
+          <div class="body">
+            <span class="term"><span lang="ko">FAISS = 잘 만든 색인(index)</span><span lang="en">FAISS = a well-made index</span></span>
+            <p><span lang="ko">A의 종착점이자 B의 진입점. 임베딩된 자료를 좌표로 정리해 둔 색인이다. 질문이 들어오면 이 색인을 뒤져 가장 가까운 항목을 찾는다 — 방대한 자료를 매번 처음부터 훑지 않고, 뒤에 붙은 색인으로 곧장 찾아가는 것과 같다.</span><span lang="en">The terminus of A and the entrance to B. An index that arranges the embedded material by coordinates. When a question arrives, it searches this index for the nearest entries — like going straight to the index at the back of a book instead of reading a vast work from the beginning every time.</span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- JOURNEY -->
+    <section id="journey" class="tight">
+      <div class="inner">
+        <div class="eyebrow"><span lang="ko">도입 · 지도</span><span lang="en">Introduction · The map</span></div>
+        <h2><span lang="ko">오늘의 여정 — STEP 1에서 10까지</span><span lang="en">Today's journey — STEP 1 to 10</span></h2>
+        <p class="lead"><span lang="ko">앞의 A/B 흐름을 열 단계로 해체한다. STEP 1에서 준비를 끝내면, 이후는 네트워크가 끊겨도 돌아간다. <span class="cinnabar-text">★ 표시</span>가 오늘의 무게중심이다.</span><span lang="en">We take the A/B flow apart into ten steps. Once STEP 1 finishes the preparation, everything after it runs even with the network cut. <span class="cinnabar-text">The ★ mark</span> is today's centre of gravity.</span></p>
+        <div class="journey">
+          <a href="#step1"><div class="jn">01</div><div class="jt"><span lang="ko">환경설정 · 자산준비</span><span lang="en">Setup · asset preparation</span></div></a>
+          <a href="#step2"><div class="jn">02</div><div class="jt"><span lang="ko">naive chunk 실패 목격</span><span lang="en">Witness naive chunking fail</span></div></a>
+          <a href="#step3" class="pivot"><div class="jn">03</div><div class="jt">PDF → XML <span class="jstar"><span lang="ko">★ 무게중심</span><span lang="en">★ centre of gravity</span></span></div></a>
+          <a href="#step4"><div class="jn">04</div><div class="jt">XML → chunk</div></a>
+          <a href="#step5"><div class="jn">05</div><div class="jt">Chunk → Vector</div></a>
+          <a href="#step6" class="pivot"><div class="jn">06</div><div class="jt"><span lang="ko">Vector DB(FAISS) 구축</span><span lang="en">Build the Vector DB (FAISS)</span></div></a>
+          <a href="#step7"><div class="jn">07</div><div class="jt">Query → Vector</div></a>
+          <a href="#step8"><div class="jn">08</div><div class="jt"><span lang="ko">Distance 계산</span><span lang="en">Distance by hand</span></div></a>
+          <a href="#step9"><div class="jn">09</div><div class="jt"><span lang="ko">FAISS 검색 + 전거</span><span lang="en">FAISS retrieval + provenance</span></div></a>
+          <a href="#step10"><div class="jn">10</div><div class="jt"><span lang="ko">생성 + 전거 (before/after)</span><span lang="en">Generation + provenance (before/after)</span></div></a>
+        </div>
+
+        <div class="prep">
+          <div class="pt"><span lang="ko">시작 전 준비 · 1분</span><span lang="en">Before we start · 1 minute</span></div>
+          <ol>
+            <li><span lang="ko">공유 Google Drive 폴더를 <code>내 드라이브</code>에 <strong>바로가기 추가</strong> (다운로드 아님, 포인터만)</span><span lang="en"><strong>Add a shortcut</strong> to the shared Google Drive folder in <code>My Drive</code> (not a download — just a pointer)</span></li>
+            <li><span lang="ko">Colab 런타임을 <code>T4 GPU</code>로 설정 — 생성 모델 Qwen3에 필요</span><span lang="en">Set the Colab runtime to <code>T4 GPU</code> — required by the Qwen3 generation model</span></li>
+          </ol>
+        </div>
+
+        <div class="stackgrid">
+          <div class="stackcard"><div class="sk"><span lang="ko">런타임</span><span lang="en">Runtime</span></div><div class="sv">Colab · GPU</div><div class="sd">T4</div></div>
+          <div class="stackcard"><div class="sk"><span lang="ko">프레임워크</span><span lang="en">Framework</span></div><div class="sv">LangChain</div></div>
+          <div class="stackcard"><div class="sk"><span lang="ko">인코더</span><span lang="en">Encoder</span></div><div class="sv">all-MiniLM-L6-v2</div><div class="sd"><span lang="ko">로컬, API 키 불필요</span><span lang="en">local, no API key</span></div></div>
+          <div class="stackcard"><div class="sk"><span lang="ko">벡터 저장소</span><span lang="en">Vector store</span></div><div class="sv">FAISS</div><div class="sd">IndexFlatL2</div></div>
+          <div class="stackcard"><div class="sk">LLM</div><div class="sv">Qwen3-0.6B</div><div class="sd"><span lang="ko">로컬, API 키 불필요</span><span lang="en">local, no API key</span></div></div>
+          <div class="stackcard"><div class="sk"><span lang="ko">코퍼스</span><span lang="en">Corpus</span></div><div class="sv">SDG Report 2025</div><div class="sd">UN Statistics Division</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ STEP 1 ============ -->
+    <section id="step1">
+      <div class="inner">
+        <div class="stephead">
+          <div class="stepnum">01</div>
+          <div class="txt">
+            <div class="steptag">STEP 1 · Setup &amp; Asset Preparation</div>
+            <h2><span lang="ko">환경설정 · 자산준비</span><span lang="en">Setup · asset preparation</span></h2>
+          </div>
+        </div>
+        <div class="summary"><span lang="ko">모든 라이브러리·모델·데이터를 <strong>한 번에</strong> 준비한다. 이 단계만 지나면 네트워크가 끊겨도 파이프라인은 끝까지 돌아간다.</span><span lang="en">Prepare every library, model and dataset <strong>in one go</strong>. Past this step, the pipeline runs to the end even with the network cut.</span></div>
+        <p><span lang="ko">버전을 고정(pin)해 참가자 20명이 완전히 같은 환경에서 실행하도록 한다. Hugging Face Hub를 오프라인으로 봉인(<code style="font-family:var(--mono);color:var(--gold)">HF_HUB_OFFLINE</code>)해, 이후 어떤 셀도 몰래 인터넷에 나가지 않도록 못 박는다. 모델은 모두 공유 드라이브에서 로컬로 읽는다.</span><span lang="en">Versions are pinned so all 20 participants run in exactly the same environment. The Hugging Face Hub is sealed offline (<code style="font-family:var(--mono);color:var(--gold)">HF_HUB_OFFLINE</code>), nailing down that no later cell quietly reaches for the internet. Every model is read locally from the shared Drive.</span></p>
+
+        <div class="code">
+          <div class="code-bar"><span class="dot"></span><span class="fname">workshop_code.md</span><span class="cell">1-2</span></div>
+<pre><span class="c-com"># <span lang="ko">Hugging Face Hub 봉인 — 모든 자산은 이미 로컬에 있다</span><span lang="en">seal the Hugging Face Hub — every asset is already local</span></span>
+os.environ[<span class="c-str">"HF_HUB_OFFLINE"</span>] = <span class="c-str">"1"</span>
+os.environ[<span class="c-str">"TRANSFORMERS_OFFLINE"</span>] = <span class="c-str">"1"</span>
+
+<span class="c-com"># <span lang="ko">Qwen3에는 GPU가 필요하다. 없으면 여기서 멈춘다.</span><span lang="en">Qwen3 needs a GPU. Without one, stop here.</span></span>
+<span class="c-kw">assert</span> torch.cuda.is_available(), <span class="c-str">"No GPU detected..."</span>
+<span class="c-fn">print</span>(<span class="c-str">"GPU:"</span>, torch.cuda.get_device_name(<span class="c-num">0</span>))
+
+drive.mount(<span class="c-str">"/content/drive"</span>)
+BASE        = <span class="c-str">"/content/drive/MyDrive/DH2026_Workshop"</span>
+ENCODER_DIR = <span class="c-str">f"{BASE}/Encoder"</span>
+LLM_DIR     = <span class="c-str">f"{BASE}/LLM"</span></pre>
+        </div>
+
+        <div class="analogy">
+          <div class="seal"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4M3 17l9 4 9-4"/></svg></div>
+          <div class="body">
+            <span class="term"><span lang="ko">필요한 것을 먼저 책상에 다 올려두기</span><span lang="en">Everything you need on the desk first</span></span>
+            <p><span lang="ko">본격적인 작업 전에 라이브러리·모델·데이터를 한자리에 모아 둔다. 이후 중간에 다시 자료를 찾으러 나가지 않도록 — 네트워크 봉인은 "이 자리에 있는 것만으로 끝까지 간다"는 약속이다.</span><span lang="en">Before the real work begins, gather libraries, models and data in one place, so you never have to go looking for material mid-task. Sealing the network is a promise: we finish with what is on this desk.</span></p>
+          </div>
+        </div>
+
+        <a class="ghlink" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/workshop_code.md#L11" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          workshop_code.md · STEP 1 <span class="arrow">↗</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ STEP 2 ============ -->
+    <section id="step2">
+      <div class="inner">
+        <div class="stephead">
+          <div class="stepnum">02</div>
+          <div class="txt">
+            <div class="steptag">STEP 2 · PDF → text → naive chunks</div>
+            <h2><span lang="ko">naive chunk 실패 목격</span><span lang="en">Witness naive chunking fail</span></h2>
+          </div>
+        </div>
+        <div class="summary"><span lang="ko">묻지도 따지지도 않고 <strong>글자 수로</strong> 자른다. 이 청크는 검색에 쓰지 <strong>않는다</strong> — 뒤에서 구조화 청크와 대비할 "이전(before)" 기준선이다.</span><span lang="en">Cut <strong>by character count</strong>, no questions asked. These chunks are <strong>not</strong> used for retrieval — they are the “before” baseline against which the structured chunks will be set.</span></div>
+        <p><span lang="ko">500자마다 눈 감고 자르고 50자를 겹친다. 구조도, 소제목도, 전거도 없다. 실행해 보면 왜 이것이 실패인지 눈으로 확인된다.</span><span lang="en">Cut blind every 500 characters with a 50-character overlap. No structure, no headings, no provenance. Run it and you see with your own eyes why it fails.</span></p>
+
+        <div class="code">
+          <div class="code-bar"><span class="dot"></span><span class="fname">workshop_code.md</span><span class="cell">2-2</span></div>
+<pre><span class="c-com"># <span lang="ko">눈 감고 500자씩 절단, 50자 겹침 — 나이브 기준선</span><span lang="en">cut blind every 500 chars, 50-char overlap — the naive baseline</span></span>
+splitter = <span class="c-fn">RecursiveCharacterTextSplitter</span>(
+    chunk_size=<span class="c-num">500</span>, chunk_overlap=<span class="c-num">50</span>)
+naive_chunks = splitter.split_text(raw_text)</pre>
+        </div>
+
+        <div class="contrast">
+          <div class="box bad">
+            <div class="tag"><span lang="ko">✗ naive chunk가 낳는 참사</span><span lang="en">✗ the wreckage naive chunking leaves</span></div>
+            <h4><span lang="ko">글자 수는 의미 경계를 모른다</span><span lang="en">Character counts know nothing of meaning</span></h4>
+            <p><span lang="ko">문장이 중간에서 잘리고, 조판 지시문이 본문에 섞이며, 숫자 부스러기만 남은 청크가 생기고, Goal 경계가 뒤섞인다.</span><span lang="en">Sentences are severed mid-way, typesetting instructions bleed into the body, chunks survive holding nothing but scraps of numbers, and Goal boundaries are jumbled together.</span></p>
+            <div class="mono">...end of Goal 1 pover
+0p6 Stroke .25pt
+789 613 552
+ty affects...</div>
+          </div>
+          <div class="box good">
+            <div class="tag"><span lang="ko">진단</span><span lang="en">Diagnosis</span></div>
+            <h4><span lang="ko">두 가지가 동시에 무너졌다</span><span lang="en">Two things collapsed at once</span></h4>
+            <p><span lang="ko"><strong>① 원천 오염</strong> — 조판 지시문·표 부스러기가 섞여 있다.<br><strong>② 구조 무지</strong> — 글자 수로 자르니 의미 단위를 모른다.</span><span lang="en"><strong>① Contaminated at source</strong> — typesetting instructions and table debris are mixed in.<br><strong>② Blind to structure</strong> — cutting by character count knows no unit of meaning.</span></p>
+            <p style="margin-top:12px;color:var(--teal-soft)"><span lang="ko">두 문제 다 <strong>구조를 모르기 때문</strong>이다. 구조를 명시하면 둘 다 풀린다 → XML(STEP 3)</span><span lang="en">Both problems come from <strong>not knowing the structure</strong>. Make the structure explicit and both dissolve → XML (STEP 3)</span></p>
+          </div>
+        </div>
+
+        <div class="analogy">
+          <div class="seal"><svg viewBox="0 0 24 24"><path d="M6 3v18M18 3v18"/><path d="M6 9h12M6 15h12" stroke-dasharray="2 2"/><circle cx="12" cy="12" r="2.5"/></svg></div>
+          <div class="body">
+            <span class="term"><span lang="ko">자를 곳을 정하는 건 자(尺)가 아니다</span><span lang="en">It is not the ruler that decides where to cut</span></span>
+            <p><span lang="ko">글을 내용과 무관하게 일정 길이로 잘라 버리면, 한 문장이 두 조각으로 흩어지고 앞뒤 맥락을 잃는다. 어디서 끊을지는 글자 수가 아니라 <strong>의미의 단위</strong>가 정해야 하고, 그 단위를 아는 건 자료를 읽은 사람이다.</span><span lang="en">Cut text to a fixed length regardless of content and a single sentence scatters into two pieces, losing the context on either side. Where to break should be decided by <strong>the unit of meaning</strong>, not the character count — and the person who knows that unit is the one who has read the material.</span></p>
+          </div>
+        </div>
+
+        <a class="ghlink" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/workshop_code.md#L81" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          workshop_code.md · STEP 2 <span class="arrow">↗</span>
+        </a>
+        <a class="sublink" href="html/step02_chunk.html">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M4 10h16M9 10v9"/></svg>
+          <span lang="ko">보조자료 · 청크란 무엇인가</span><span lang="en">Companion · What Is a Chunk</span> <span class="arrow">→</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ STEP 3 (PIVOT) ============ -->
+    <section id="step3">
+      <div class="inner">
+        <div class="stephead">
+          <div class="stepnum pivot">03</div>
+          <div class="txt">
+            <div class="steptag">STEP 3 · Structure the PDF into hierarchical XML</div>
+            <h2>PDF → XML <span style="color:var(--gold);font-size:.7em"><span lang="ko">★ 무게중심</span><span lang="en">★ centre of gravity</span></span></h2>
+          </div>
+        </div>
+        <div class="summary pivot"><span lang="ko">평면 텍스트는 <strong>Goal &gt; Subsection &gt; Paragraph</strong>의 위계를 잃는다. 그런데 그 위계는 <strong>사라진 적이 없다</strong> — 문서 안에 그대로 있다.</span><span lang="en">Flat text loses the hierarchy of <strong>Goal &gt; Subsection &gt; Paragraph</strong>. Yet that hierarchy <strong>never disappeared</strong> — it is still there, inside the document.</span></div>
+        <p><span lang="ko">편집자는 소제목을 굵은 11포인트로, 본문을 9포인트로 지정해 두었다. <strong class="teal-text">조판이 곧 구조다.</strong> 그러니 "이 줄이 소제목인가"를 글자만 보고 추측할 필요가 없다. 문서가 이미 선언해 둔 것을 읽으면 된다.</span><span lang="en">The editor set subheadings in bold 11-point and body text in 9-point. <strong class="teal-text">The typesetting <em>is</em> the structure.</strong> So there is no need to guess from the words alone whether a line is a subheading. Just read what the document has already declared.</span></p>
+
+        <div class="typemap">
+          <div class="row take"><span class="face">GothamBold</span><span class="pt">11pt</span><span class="role"><span lang="ko">소제목</span><span lang="en">Subheading</span><span class="mark">→ subsection</span></span></div>
+          <div class="row take"><span class="face">Whitney-Book</span><span class="pt">9pt</span><span class="role"><span lang="ko">본문 문단</span><span lang="en">Body paragraph</span><span class="mark">→ paragraph</span></span></div>
+          <div class="row"><span class="face">Gotham-Black</span><span class="pt">16pt</span><span class="role"><span lang="ko">Goal 제목</span><span lang="en">Goal title</span><span class="mark"><span lang="ko">경계 판별</span><span lang="en">marks boundaries</span></span></span></div>
+          <div class="row"><span class="face">Whitney-Semibold</span><span class="pt">8.5pt</span><span class="role"><span lang="ko">사진 캡션</span><span lang="en">Photo caption</span><span class="mark"><span lang="ko">제외</span><span lang="en">excluded</span></span></span></div>
+          <div class="row"><span class="face">Whitney-Semibold</span><span class="pt">8pt</span><span class="role"><span lang="ko">도표 제목</span><span lang="en">Figure title</span><span class="mark"><span lang="ko">제외</span><span lang="en">excluded</span></span></span></div>
+          <div class="row"><span class="face">Whitney-Medium</span><span class="pt">6pt</span><span class="role"><span lang="ko">도표 축 숫자·라벨</span><span lang="en">Axis numbers and labels</span><span class="mark"><span lang="ko">제외</span><span lang="en">excluded</span></span></span></div>
+          <div class="row"><span class="face">Gotham-Black</span><span class="pt">8pt</span><span class="role"><span lang="ko">머리말 · 쪽번호</span><span lang="en">Running head · page number</span><span class="mark"><span lang="ko">제외</span><span lang="en">excluded</span></span></span></div>
+        </div>
+        <div class="chain-cap"><span lang="ko">두 줄만 취하면 된다. <span class="gold">조판 지시문·캡션·표 숫자는 서체가 다르므로 저절로 빠진다.</span></span><span lang="en">Only two rows need to be taken. <span class="gold">Typesetting instructions, captions and table numbers are set in different faces, so they drop out on their own.</span></span></div>
+
+        <div class="code">
+          <div class="code-bar"><span class="dot"></span><span class="fname">build_xml.py</span><span class="cell"><span lang="ko">판별부 전체</span><span lang="en">full classifier</span></span></div>
+<pre><span class="c-kw">def</span> <span class="c-fn">classify</span>(spans):
+    font, size = spans[<span class="c-num">0</span>][<span class="c-str">"font"</span>], <span class="c-fn">round</span>(spans[<span class="c-num">0</span>][<span class="c-str">"size"</span>], <span class="c-num">1</span>)
+
+    <span class="c-kw">if</span> <span class="c-str">"Gotham-Black"</span> <span class="c-kw">in</span> font <span class="c-kw">and</span> <span class="c-num">15</span> &lt;= size &lt;= <span class="c-num">17</span>:
+        <span class="c-kw">return</span> <span class="c-str">"goal_title"</span>
+    <span class="c-kw">if</span> <span class="c-fn">all</span>(<span class="c-str">"GothamBold"</span> <span class="c-kw">in</span> s[<span class="c-str">"font"</span>] <span class="c-kw">and</span> <span class="c-num">10.5</span> &lt;= s[<span class="c-str">"size"</span>] &lt;= <span class="c-num">11.5</span> <span class="c-kw">for</span> s <span class="c-kw">in</span> spans):
+        <span class="c-kw">return</span> <span class="c-str">"heading"</span>      <span class="c-com"># ← <span lang="ko">소제목</span><span lang="en">subheading</span></span>
+    <span class="c-kw">if</span> font.startswith(<span class="c-str">"Whitney-"</span>) <span class="c-kw">and</span> <span class="c-num">8.8</span> &lt;= size &lt;= <span class="c-num">9.2</span>:
+        <span class="c-kw">return</span> <span class="c-str">"body"</span>         <span class="c-com"># ← <span lang="ko">본문</span><span lang="en">body text</span></span>
+
+    <span class="c-kw">return</span> <span class="c-str">"ignore"</span>           <span class="c-com"># <span lang="ko">나머지는 전부 버린다</span><span lang="en">discard everything else</span></span></pre>
+        </div>
+
+        <div class="pull"><span lang="ko">글자를 읽지 말고,<br><span class="accent">조판을 읽는다.</span></span><span lang="en">Do not read the letters —<br><span class="accent">read the typesetting.</span></span></div>
+
+        <div class="code">
+          <div class="code-bar"><span class="dot"></span><span class="fname">workshop_code.md</span><span class="cell">3-1</span></div>
+<pre><span class="c-com"># build_xml.py : <span lang="ko">[입력 PDF] [출력 XML]</span><span lang="en">[input PDF] [output XML]</span></span>
+!python <span class="c-str">"{BUILD_SCRIPT}"</span> <span class="c-str">"{PDF_PATH}"</span> sdg_report_2025.xml</pre>
+        </div>
+
+        <div class="analogy">
+          <div class="seal"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div>
+          <div class="body">
+            <span class="term"><span lang="ko">판식(版式)을 보고 판본을 가른다</span><span lang="en">The page format tells you the edition</span></span>
+            <p><span lang="ko">서지학은 활자와 행관(行款), 판식을 보고 판본을 가려낸다. 본문을 다 읽기 전에 <strong>형태가 먼저 말해 주기</strong> 때문이다. 여기서 하는 일도 같다 — 이 문서에서는 서체가 그 형태였다. 자료마다 구조를 담고 있는 자리는 다르고, <strong class="teal-text">그 자리를 찾아내는 것이 연구자의 몫</strong>이다.</span><span lang="en">Bibliography distinguishes editions by their type, line rulings and page format, because <strong>the form speaks first</strong>, before you have read the text through. What we do here is the same — in this document, the form was the typeface. Where the structure lives differs from source to source, and <strong class="teal-text">finding that place is the researcher's part of the work</strong>.</span></p>
+          </div>
+        </div>
+
+        <a class="ghlink" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/workshop_code.md#L125" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          workshop_code.md · STEP 3 <span class="arrow">↗</span>
+        </a>
+        <a class="sublink" href="html/step03_xml.html">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M4 10h16M9 10v9"/></svg>
+          <span lang="ko">보조자료 · 왜 XML인가</span><span lang="en">Companion · Why XML</span> <span class="arrow">→</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ STEP 4 ============ -->
+    <section id="step4">
+      <div class="inner">
+        <div class="stephead">
+          <div class="stepnum">04</div>
+          <div class="txt">
+            <div class="steptag">STEP 4 · XML → chunks → LangChain Documents</div>
+            <h2>XML → chunk</h2>
+          </div>
+        </div>
+        <div class="summary"><span lang="ko"><strong>&lt;subsection&gt; 하나 = 청크 하나</strong>가 원칙이다. 본문은 검색 대상이 되고, Goal 번호·이름·쪽수·heading은 <strong>메타데이터(전거)</strong>가 되어 매 검색 결과에 따라붙는다.</span><span lang="en">The principle: <strong>one &lt;subsection&gt; = one chunk</strong>. The body text becomes searchable; the Goal number, name, pages and heading become <strong>metadata (the provenance)</strong> and ride along with every retrieval result.</span></div>
+        <p><span lang="ko">정본 XML은 드라이브에서 읽기 전용으로 불러오므로, 참가자 전원이 완전히 같은 판본에서 출발한다. 검색 대상이 되는 것은 <strong>소제목 + 본문</strong>이고, Goal 번호·이름·쪽수는 검색되지 않고 전거로만 실린다.</span><span lang="en">The canonical XML is loaded read-only from the Drive, so every participant starts from exactly the same edition. What becomes searchable is <strong>subheading + body</strong>; the Goal number, name and pages are never searched — they ride only as provenance.</span></p>
+
+        <div class="metalist" style="margin:22px 0 0">
+          <ul style="list-style:none">
+            <li><span class="k">page_content</span><span class="v"><span lang="ko"><strong>소제목</strong> + 본문 문단 — 이 전체가 벡터가 된다</span><span lang="en"><strong>Subheading</strong> + body paragraphs — all of this becomes the vector</span></span></li>
+            <li><span class="k">metadata</span><span class="v"><code style="font-family:var(--mono);color:var(--gold)">id · goal · goal_name · pages · <strong>heading</strong> · part</code><span lang="ko"> — 검색되지 않고 따라만 붙는다</span><span lang="en"> — never searched, only carried along</span></span></li>
+          </ul>
+        </div>
+        <div class="chain-cap" style="text-align:left"><span lang="ko"><span class="gold">소제목은 양쪽에 다 들어간다</span> — 앞에서는 검색을 돕고, 뒤에서는 출처를 밝힌다.</span><span lang="en"><span class="gold">The subheading goes on both sides</span> — on the front it aids retrieval, on the back it names the source.</span></div>
+
+        <div class="analogy" style="border-left-color:var(--cinnabar)">
+          <div class="seal" style="border-color:var(--cinnabar);background:rgba(193,83,58,.06)"><svg viewBox="0 0 24 24" style="stroke:var(--cinnabar)"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></svg></div>
+          <div class="body">
+            <span class="term" style="color:var(--cinnabar-soft)"><span lang="ko">단, 인코더가 삼킬 수 있는 크기까지만</span><span lang="en">But only as large as the encoder can swallow</span></span>
+            <p><span lang="ko">인코더의 입력 한도는 <strong>256토큰</strong>이다. 넘으면 뒷부분이 <strong>잘린 채</strong> 벡터가 되어 검색에서 빠진다. 그래서 <strong>172단어(제목 포함)</strong>를 넘으면 <strong class="teal-text">문단 경계</strong>에서, 문단 하나가 그보다 길면 <strong class="teal-text">문장 경계</strong>에서 나눈다 — <strong>문장은 자르지 않는다.</strong></span><span lang="en">The encoder's input limit is <strong>256 tokens</strong>. Go over and the tail is <strong>truncated</strong> before it becomes a vector, dropping out of retrieval entirely. So beyond <strong>172 words (title included)</strong> we split at a <strong class="teal-text">paragraph boundary</strong>, and if a single paragraph is longer than that, at a <strong class="teal-text">sentence boundary</strong> — <strong>we never cut a sentence.</strong></span></p>
+          </div>
+        </div>
+
+        <div class="contrast">
+          <div class="box good">
+            <div class="tag"><span lang="ko">그대로 둔 것</span><span lang="en">Left whole</span></div>
+            <h4><span lang="ko">47 / 108 소제목</span><span lang="en">47 / 108 subheadings</span></h4>
+            <p><span lang="ko">한도 안에 들어오므로 1 소제목 = 1 청크 그대로.</span><span lang="en">They fit within the limit, so one subheading stays one chunk.</span></p>
+          </div>
+          <div class="box good">
+            <div class="tag"><span lang="ko">나눈 것</span><span lang="en">Split</span></div>
+            <h4><span lang="ko">나머지 61 소제목</span><span lang="en">The remaining 61 subheadings</span></h4>
+            <p><span lang="ko">문단·문장 경계에서 분할. <code style="font-family:var(--mono);color:var(--gold)">part: "1/2"</code>가 붙지만 <strong>heading·goal·pages는 동일</strong>하므로 전거는 그대로다.</span><span lang="en">Split at paragraph and sentence boundaries. A <code style="font-family:var(--mono);color:var(--gold)">part: "1/2"</code> is attached, but <strong>heading, goal and pages stay identical</strong>, so the provenance is unchanged.</span></p>
+          </div>
+        </div>
+        <div class="chain-cap"><span lang="ko">소제목 108개 → 청크 <span class="gold">176개</span> · 최대 249토큰 (한도 256)</span><span lang="en">108 subheadings → <span class="gold">176 chunks</span> · max 249 tokens (limit 256)</span></div>
+
+        <div class="code">
+          <div class="code-bar"><span class="dot"></span><span class="fname">workshop_code.md</span><span class="cell">4-1</span></div>
+<pre>chunks.append({
+    <span class="c-str">"metadata"</span>: {                    <span class="c-com"># <span lang="ko">전거. 절대 임베딩 안 함</span><span lang="en">provenance. never embedded</span></span>
+        <span class="c-str">"id"</span>:        <span class="c-str">f"G{g_num:02d}-S{i+1:02d}"</span>,
+        <span class="c-str">"goal"</span>:      g_num,
+        <span class="c-str">"goal_name"</span>: g_name,
+        <span class="c-str">"pages"</span>:     g_pages,
+        <span class="c-str">"heading"</span>:   heading,
+    },
+    <span class="c-str">"text"</span>: <span class="c-str">f"{heading}\n{body}"</span>,     <span class="c-com"># <span lang="ko">본문. 이것만 임베딩</span><span lang="en">body. only this is embedded</span></span>
+})</pre>
+        </div>
+
+        <div class="analogy">
+          <div class="seal"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 14h6"/></svg></div>
+          <div class="body">
+            <span class="term"><span lang="ko">Document = 서지 정보가 붙은 색인 카드</span><span lang="en">Document = an index card with its bibliography attached</span></span>
+            <p><span lang="ko">LangChain <code style="font-family:var(--mono);color:var(--gold)">Document</code>는 출처가 적힌 색인 카드다. 앞면(<code style="font-family:var(--mono);color:var(--teal-soft)">page_content</code>)엔 검색될 본문을, 뒷면(<code style="font-family:var(--mono);color:var(--teal-soft)">metadata</code>)엔 출처를 적는다. 뒷면은 검색되지 않지만, 카드가 뽑힐 때 늘 함께 딸려 나온다 — 그것이 전거(典據, 출처 근거)다.</span><span lang="en">A LangChain <code style="font-family:var(--mono);color:var(--gold)">Document</code> is an index card with its source written on it. The front (<code style="font-family:var(--mono);color:var(--teal-soft)">page_content</code>) holds the text to be searched; the back (<code style="font-family:var(--mono);color:var(--teal-soft)">metadata</code>) holds the source. The back is never searched, but it always comes out with the card when the card is drawn — that is provenance.</span></p>
+            <p style="margin-top:10px"><span lang="ko"><strong>소제목만은 양면에 모두 적는다.</strong> 앞면에 두는 이유는 나뉜 조각 때문이다 — <code style="font-family:var(--mono);color:var(--gold)">part 2/2</code>는 본문 중간 문단들만 갖고 있어서, 소제목이 없으면 무슨 주제인지 알 수 없는 고아 문단이 된다. 제목을 붙여야 검색이 그 조각을 찾아낸다.</span><span lang="en"><strong>The subheading alone is written on both faces.</strong> It goes on the front because of the split pieces — a <code style="font-family:var(--mono);color:var(--gold)">part 2/2</code> holds only middle paragraphs, and without the subheading it is an orphan passage whose subject cannot be told. Attach the title and retrieval can find that piece.</span></p>
+          </div>
+        </div>
+
+        <a class="ghlink" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/workshop_code.md#L146" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          workshop_code.md · STEP 4 <span class="arrow">↗</span>
+        </a>
+        <a class="sublink" href="html/step04_metadata.html">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M4 10h16M9 10v9"/></svg>
+          <span lang="ko">보조자료 · 전거가 실리는 법</span><span lang="en">Companion · How Provenance Rides Along</span> <span class="arrow">→</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ STEP 5 ============ -->
+    <section id="step5">
+      <div class="inner">
+        <div class="stephead">
+          <div class="stepnum">05</div>
+          <div class="txt">
+            <div class="steptag">STEP 5 · Load the encoder · embed every chunk</div>
+            <h2>Chunk → Vector</h2>
+          </div>
+        </div>
+        <div class="summary"><span lang="ko">각 청크를 <strong>384개의 숫자</strong>로 바꾼다. 이 좌표가 의미의 위치다. GPU에서 전체가 약 1초면 끝난다.</span><span lang="en">Turn each chunk into <strong>384 numbers</strong>. Those coordinates are where its meaning sits. On a GPU the whole set takes about a second.</span></div>
+        <p><span lang="ko">인코더는 드라이브에서 로컬로 불러오고(허브가 봉인돼 있으므로), <code style="font-family:var(--mono);color:var(--gold)">normalize_embeddings=True</code>로 정규화한다. 정규화된 벡터에서는 <code style="font-family:var(--mono);color:var(--teal-soft)">L2거리² = 2 − 2·코사인유사도</code> — L2와 코사인이 순위상 동치가 되어, 화면 숫자와 설명이 일치한다.</span><span lang="en">The encoder is loaded locally from the Drive (the Hub is sealed) and normalised with <code style="font-family:var(--mono);color:var(--gold)">normalize_embeddings=True</code>. For normalised vectors, <code style="font-family:var(--mono);color:var(--teal-soft)">L2 distance² = 2 − 2·cosine similarity</code> — L2 and cosine rank identically, so the numbers on screen match the explanation.</span></p>
+
+        <div class="code">
+          <div class="code-bar"><span class="dot"></span><span class="fname">workshop_code.md</span><span class="cell">5-1 · 5-2</span></div>
+<pre>embeddings = <span class="c-fn">HuggingFaceEmbeddings</span>(
+    model_name=ENCODER_DIR,
+    model_kwargs={<span class="c-str">"device"</span>: <span class="c-str">"cuda"</span>},
+    encode_kwargs={<span class="c-str">"normalize_embeddings"</span>: <span class="c-kw">True</span>},
+)
+<span class="c-com"># <span lang="ko">각 문장 → 384개의 숫자</span><span lang="en">each passage → 384 numbers</span></span>
+vectors = embeddings.embed_documents([c[<span class="c-str">"text"</span>] <span class="c-kw">for</span> c <span class="c-kw">in</span> chunks])</pre>
+        </div>
+
+        <div class="analogy">
+          <div class="seal"><svg viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><circle cx="9" cy="14" r="1.4"/><circle cx="14" cy="9" r="1.4"/><circle cx="17" cy="12" r="1.4"/></svg></div>
+          <div class="body">
+            <span class="term"><span lang="ko">의미를 좌표로 — 384차원의 자리</span><span lang="en">Meaning as coordinates — a place in 384 dimensions</span></span>
+            <p><span lang="ko">글의 뜻을 384개 축 위의 한 지점으로 옮긴다. 비슷한 뜻은 가까이, 다른 뜻은 멀리 놓인다. 주제별로 자료의 자리를 정해 두는 분류 체계와 같되, 그 자리를 사람이 아니라 <strong>의미의 근접성</strong>이 결정한다.</span><span lang="en">The sense of a passage is moved to a single point on 384 axes. Similar meanings land near each other, different ones far apart. It is like a classification scheme assigning each item a place by subject — except the place is decided not by a person but by <strong>proximity of meaning</strong>.</span></p>
+          </div>
+        </div>
+
+        <a class="ghlink" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/workshop_code.md#L204" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          workshop_code.md · STEP 5 <span class="arrow">↗</span>
+        </a>
+        <a class="sublink" href="html/step05_vector.html">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M4 10h16M9 10v9"/></svg>
+          <span lang="ko">보조자료 · 임베딩과 벡터</span><span lang="en">Companion · Embeddings and Vectors</span> <span class="arrow">→</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ STEP 6 (HINGE) ============ -->
+    <section id="step6">
+      <div class="inner">
+        <div class="stephead">
+          <div class="stepnum pivot">06</div>
+          <div class="txt">
+            <div class="steptag">STEP 6 · Build the vector store (FAISS)</div>
+            <h2><span lang="ko">Vector DB<span style="color:var(--teal-soft);font-size:.7em">(FAISS)</span> 구축</span><span lang="en">Building the Vector DB <span style="color:var(--teal-soft);font-size:.7em">(FAISS)</span></span></h2>
+          </div>
+        </div>
+        <div class="summary pivot"><span lang="ko">STEP 5의 벡터가 그대로 들어간다 — 아무것도 다시 계산하지 않는다. 벡터와 원문은 <strong>따로</strong> 저장되고, 색인 번호가 둘을 잇는다.</span><span lang="en">The vectors from STEP 5 go straight in — nothing is recomputed. Vectors and source text are stored <strong>separately</strong>, joined by an index number.</span></div>
+        <p><span lang="ko">여기서 A(자료 준비)가 끝나고 B(질문·검색)가 시작된다. 앞의 흐름도에서 청록으로 강조된 경첩이 바로 이 색인집이다. FAISS는 벡터, 원문, id 테이블 세 저장소를 나란히 두고, 색인 번호로 즉시 맞물린다.</span><span lang="en">Here A (preparing the material) ends and B (question and retrieval) begins. The hinge picked out in teal in the earlier diagram is exactly this index. FAISS keeps three stores side by side — vectors, source text, and an id table — meshed instantly by index number.</span></p>
+
+        <div class="code">
+          <div class="code-bar"><span class="dot"></span><span class="fname">workshop_code.md</span><span class="cell">6-1</span></div>
+<pre>store = FAISS.<span class="c-fn">from_embeddings</span>(
+    text_embeddings=<span class="c-fn">list</span>(<span class="c-fn">zip</span>(
+        [c[<span class="c-str">"text"</span>] <span class="c-kw">for</span> c <span class="c-kw">in</span> chunks], vectors)),
+    embedding=embeddings,
+    metadatas=[c[<span class="c-str">"metadata"</span>] <span class="c-kw">for</span> c <span class="c-kw">in</span> chunks],
+    ids=[c[<span class="c-str">"metadata"</span>][<span class="c-str">"id"</span>] <span class="c-kw">for</span> c <span class="c-kw">in</span> chunks],
+)
+<span class="c-com"># <span lang="ko">벡터 저장소 · id 테이블 · 원문 저장소가 색인 번호로 맞물린다</span><span lang="en">vector store · id table · document store mesh by index number</span></span></pre>
+        </div>
+
+        <div class="analogy">
+          <div class="seal"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 5v14M4 19h16M20 5v14"/><path d="M8 5v14M4 9h4M4 13h4M4 16h4"/></svg></div>
+          <div class="body">
+            <span class="term"><span lang="ko">색인의 완성 — A에서 B로 넘어가는 자리</span><span lang="en">The index complete — where A hands over to B</span></span>
+            <p><span lang="ko">수천 항목을 좌표로 정리해 둔 색인. 이제 어떤 질문이 와도 전체 원문을 처음부터 읽지 않고, 색인만 뒤져 가장 가까운 항목으로 곧장 간다. 메타데이터(전거)가 함께 저장되어, 찾은 항목마다 출처가 딸려 나온다.</span><span lang="en">An index arranging thousands of entries by coordinate. Whatever question arrives, we no longer read the whole text from the start — we search the index alone and go straight to the nearest entries. The metadata (the provenance) is stored alongside, so every entry found brings its source with it.</span></p>
+          </div>
+        </div>
+
+        <a class="ghlink" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/workshop_code.md#L250" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          workshop_code.md · STEP 6 <span class="arrow">↗</span>
+        </a>
+        <a class="sublink" href="html/step06_vectordb.html">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M4 10h16M9 10v9"/></svg>
+          <span lang="ko">보조자료 · 벡터 데이터베이스</span><span lang="en">Companion · The Vector Store</span> <span class="arrow">→</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ STEP 7 ============ -->
+    <section id="step7">
+      <div class="inner">
+        <div class="stephead">
+          <div class="stepnum">07</div>
+          <div class="txt">
+            <div class="steptag">STEP 7 · A question becomes a vector too</div>
+            <h2>Query → Vector</h2>
+          </div>
+        </div>
+        <div class="summary"><span lang="ko">청크를 임베딩한 <strong>바로 그 인코더</strong>가 질문을 임베딩한다. 유일한 차이 — 질문에는 메타데이터가 없다.</span><span lang="en">The question is embedded by <strong>the very same encoder</strong> that embedded the chunks. The only difference — a question has no metadata.</span></div>
+        <p><span lang="ko">질문과 청크가 <strong>같은 좌표계</strong>에 놓여야 거리를 잴 수 있다. 다른 자로 잰 길이는 비교할 수 없듯, 같은 인코더로 임베딩해야 한다. 여기서 B 국면(온라인)이 실제로 돌기 시작한다.</span><span lang="en">Question and chunks must sit in <strong>the same coordinate system</strong> before a distance can be measured. Just as lengths taken with different rulers cannot be compared, both must be embedded by the same encoder. This is where phase B (online) actually starts running.</span></p>
+
+        <div class="code">
+          <div class="code-bar"><span class="dot"></span><span class="fname">workshop_code.md</span><span class="cell">7-1</span></div>
+<pre>query = <span class="c-str">"How many people still live in extreme poverty?"</span>
+
+<span class="c-com"># <span lang="ko">청크와 같은 인코더 · 같은 384차원 좌표계</span><span lang="en">same encoder as the chunks · same 384-dim coordinate system</span></span>
+qv = embeddings.<span class="c-fn">embed_query</span>(query)
+
+<span class="c-fn">print</span>(<span class="c-str">f"vector: {len(qv)} dims"</span>)   <span class="c-com"># → 384</span></pre>
+        </div>
+
+        <div class="analogy">
+          <div class="seal"><svg viewBox="0 0 24 24"><path d="M3 8h18M3 8v3M8 8v2M13 8v2M18 8v2M21 8v3"/><path d="M5 16h14M5 16v3M12 16v3M19 16v3"/></svg></div>
+          <div class="body">
+            <span class="term"><span lang="ko">같은 척도로 재기</span><span lang="en">Measuring on the same scale</span></span>
+            <p><span lang="ko">질문과 자료를 비교하려면 같은 척도가 필요하다. 청크를 잰 그 인코더로 질문도 재야, 둘 사이의 거리가 의미를 갖는다. 서로 다른 도량형으로 잰 값은 나란히 둘 수 없다.</span><span lang="en">Comparing a question with the material requires one scale. Only if the question is measured by the encoder that measured the chunks does the distance between them mean anything. Values taken in different systems of measure cannot be set side by side.</span></p>
+          </div>
+        </div>
+
+        <a class="ghlink" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/workshop_code.md#L280" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          workshop_code.md · STEP 7 <span class="arrow">↗</span>
+        </a>
+        <a class="sublink" href="html/step08_distance.html">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M4 10h16M9 10v9"/></svg>
+          <span lang="ko">보조자료 · 거리로 찾는다 (STEP 7·8)</span><span lang="en">Companion · Finding by Distance (STEP 7–8)</span> <span class="arrow">→</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ STEP 8 ============ -->
+    <section id="step8">
+      <div class="inner">
+        <div class="stephead">
+          <div class="stepnum">08</div>
+          <div class="txt">
+            <div class="steptag">STEP 8 · Distance, by hand</div>
+            <h2><span lang="ko">Distance 계산</span><span lang="en">Distance, by hand</span></h2>
+          </div>
+        </div>
+        <div class="summary"><span lang="ko">검색이란 <strong>거리를 재서 정렬하는 것</strong>, 그 이상도 이하도 아니다. FAISS 없이 넘파이로 직접 해보며, FAISS가 대신 해주는 일을 눈으로 본다.</span><span lang="en">Retrieval is <strong>measuring distances and sorting them</strong> — no more, no less. We do it ourselves in NumPy, without FAISS, and see with our own eyes what FAISS does on our behalf.</span></div>
+        <p><span lang="ko">쿼리 벡터와 모든 청크 벡터의 차이를 제곱해 더하고 제곱근을 취한다 — 그게 L2 거리다. 정렬하면 가장 가까운 청크가 위로 온다. 다음 단계에서 FAISS 결과와 <strong>완전히 같음</strong>을 확인한다.</span><span lang="en">Take the difference between the query vector and every chunk vector, square it, sum, and take the square root — that is L2 distance. Sort, and the nearest chunk rises to the top. In the next step we confirm this is <strong>exactly identical</strong> to what FAISS returns.</span></p>
+
+        <div class="code">
+          <div class="code-bar"><span class="dot"></span><span class="fname">workshop_code.md</span><span class="cell">8-1</span></div>
+<pre>V = store.index.<span class="c-fn">reconstruct_n</span>(<span class="c-num">0</span>, store.index.ntotal)  <span class="c-com"># <span lang="ko">모든 청크</span><span lang="en">every chunk</span></span>
+Q = np.<span class="c-fn">array</span>(qv)                                    <span class="c-com"># <span lang="ko">질문 하나</span><span lang="en">one question</span></span>
+
+distances = []
+<span class="c-kw">for</span> v <span class="c-kw">in</span> V:
+    diff = v - Q                        <span class="c-com"># <span lang="ko">384개의 차이</span><span lang="en">384 differences</span></span>
+    dist = np.<span class="c-fn">sqrt</span>((diff ** <span class="c-num">2</span>).<span class="c-fn">sum</span>())   <span class="c-com"># <span lang="ko">제곱→합→제곱근</span><span lang="en">square→sum→root</span></span>
+    distances.append(dist)
+
+order = np.<span class="c-fn">argsort</span>(distances)             <span class="c-com"># <span lang="ko">가까운 순 정렬</span><span lang="en">sort nearest first</span></span></pre>
+        </div>
+
+        <div class="analogy">
+          <div class="seal"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 10l3 2-3 2M13 14h3"/></svg></div>
+          <div class="body">
+            <span class="term"><span lang="ko">블랙박스를 열어 본다</span><span lang="en">Opening the black box</span></span>
+            <p><span lang="ko">검색이 마법처럼 보이지만, 실은 손으로 잴 수 있는 산술이다. 원리를 직접 계산해 보는 것은, 도구가 내놓은 결과를 그대로 믿기 전에 <strong>그 결과가 어떻게 나왔는지</strong> 스스로 확인하는 태도다 — 인문학 연구가 근거를 손수 대조해 온 방식 그대로.</span><span lang="en">Retrieval looks like magic, but it is arithmetic you can do by hand. Working the principle out yourself is the habit of checking <strong>how a result was arrived at</strong> before trusting what a tool hands you — exactly how humanities scholarship has always collated its evidence.</span></p>
+          </div>
+        </div>
+
+        <a class="ghlink" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/workshop_code.md#L322" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          workshop_code.md · STEP 8 <span class="arrow">↗</span>
+        </a>
+        <a class="sublink" href="html/step08_distance.html">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M4 10h16M9 10v9"/></svg>
+          <span lang="ko">보조자료 · 거리로 찾는다</span><span lang="en">Companion · Finding by Distance</span> <span class="arrow">→</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ STEP 9 ============ -->
+    <section id="step9">
+      <div class="inner">
+        <div class="stephead">
+          <div class="stepnum">09</div>
+          <div class="txt">
+            <div class="steptag">STEP 9 · FAISS retrieval + provenance</div>
+            <h2><span lang="ko">FAISS 검색 + 전거</span><span lang="en">FAISS retrieval + provenance</span></h2>
+          </div>
+        </div>
+        <div class="summary"><span lang="ko">STEP 8에서 손으로 한 것을 FAISS가 <strong>한 줄로</strong> 한다. 결과가 같음을 확인한 뒤, 각 결과에 <strong>출처(Goal·subsection·쪽·거리)</strong>를 붙인다.</span><span lang="en">What we did by hand in STEP 8, FAISS does <strong>in one line</strong>. Having confirmed the results match, we attach to each one its <strong>source (Goal · subsection · pages · distance)</strong>.</span></div>
+        <p><span lang="ko">"방금 손으로 한 게 이거였다." 손계산과 FAISS의 상위 3개가 정확히 일치함을 보여주고, 메타데이터로 전거를 표시한다 — 메타데이터는 검색되지 않지만 결과에 늘 딸려 나온다.</span><span lang="en">“That is what we just did by hand.” We show the top 3 from the hand computation and from FAISS agreeing exactly, then display the provenance from the metadata — which is never searched, yet always comes out with the result.</span></p>
+
+        <div class="code">
+          <div class="code-bar"><span class="dot"></span><span class="fname">workshop_code.md</span><span class="cell">9-1 · 9-2</span></div>
+<pre>results = store.<span class="c-fn">similarity_search_with_score</span>(query, k=<span class="c-num">3</span>)
+<span class="c-fn">print</span>(<span class="c-str">"STEP 8 (by hand):"</span>, hand_top3)
+<span class="c-fn">print</span>(<span class="c-str">"STEP 9 (FAISS) :"</span>, faiss_top3)
+<span class="c-fn">print</span>(<span class="c-str">"match          :"</span>, hand_top3 == faiss_top3)   <span class="c-com"># True</span>
+
+<span class="c-com"># <span lang="ko">각 결과에 전거를 붙인다</span><span lang="en">attach the provenance to each result</span></span>
+<span class="c-fn">print</span>(<span class="c-str">f"{m['id']} · Goal {m['goal']} {m['goal_name']} · pp. {m['pages']}"</span>)</pre>
+        </div>
+
+        <div class="analogy">
+          <div class="seal"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></div>
+          <div class="body">
+            <span class="term"><span lang="ko">전거(典據)의 부착 — 출처 없는 결과는 못 믿는다</span><span lang="en">Attaching provenance — a result without a source cannot be trusted</span></span>
+            <p><span lang="ko">찾은 대목마다 "어느 목표, 어느 절, 몇 쪽"을 명기한다. 인용에 반드시 출처를 다는 인문학의 규율 그대로다. 근거를 댈 수 없는 검색 결과는 신뢰할 수 없다.</span><span lang="en">For every passage found, state which Goal, which section, which pages. It is the humanities' own discipline of always citing a source. A retrieval result whose grounds cannot be given is not trustworthy.</span></p>
+          </div>
+        </div>
+
+        <a class="ghlink" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/workshop_code.md#L362" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          workshop_code.md · STEP 9 <span class="arrow">↗</span>
+        </a>
+        <a class="sublink" href="html/step10_answer.html">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M4 10h16M9 10v9"/></svg>
+          <span lang="ko">보조자료 · 답변이 되기까지 (STEP 9·10)</span><span lang="en">Companion · From Retrieval to Answer (STEP 9–10)</span> <span class="arrow">→</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ STEP 10 ============ -->
+    <section id="step10">
+      <div class="inner">
+        <div class="stephead">
+          <div class="stepnum">10</div>
+          <div class="txt">
+            <div class="steptag">STEP 10 · Generation with provenance (Qwen3-0.6B)</div>
+            <h2><span lang="ko">생성 + 전거</span><span lang="en">Generation + provenance</span></h2>
+          </div>
+        </div>
+        <div class="summary"><span lang="ko">검색기가 근거를 찾고, LLM이 그것을 답으로 엮는다. 모든 답변은 <strong>그 답이 딛고 선 출처와 함께</strong> 제시된다.</span><span lang="en">The retriever finds the grounds; the LLM weaves them into an answer. Every answer is presented <strong>together with the sources it stands on</strong>.</span></div>
+        <p><span lang="ko">Qwen3는 causal 모델(<code style="font-family:var(--mono);color:var(--gold)">AutoModelForCausalLM</code>)이자 chat 모델이라, 입력을 chat 템플릿으로 감싸고 답변만 잘라낸다. 핵심은 <strong>before/after 대비</strong>다.</span><span lang="en">Qwen3 is a causal model (<code style="font-family:var(--mono);color:var(--gold)">AutoModelForCausalLM</code>) and a chat model, so we wrap the input in a chat template and slice out just the answer. The point is the <strong>before/after contrast</strong>.</span></p>
+
+        <div class="contrast">
+          <div class="box bad">
+            <div class="tag"><span lang="ko">BEFORE · context 없음</span><span lang="en">BEFORE · no context</span></div>
+            <h4><span lang="ko">기억만으로 답한다</span><span lang="en">Answering from memory alone</span></h4>
+            <p><span lang="ko">검색도 근거도 없이 모델의 기억에서 답을 꺼낸다. 그럴듯하지만 낡았을 수 있고, 틀렸을 수 있고, <strong>확인할 출처가 없다</strong>.</span><span lang="en">The answer is drawn from the model's memory, with no retrieval and no grounds. It is plausible, but it may be stale, it may be wrong, and <strong>there is no source to check</strong>.</span></p>
+            <div class="mono" lang="ko">answer = llm.invoke(query)
+# 출처 없음. 검증 불가.</div>
+            <div class="mono" lang="en">answer = llm.invoke(query)
+# No source. Cannot be verified.</div>
+          </div>
+          <div class="box good">
+            <div class="tag"><span lang="ko">AFTER · 검색된 근거 위에서</span><span lang="en">AFTER · on retrieved grounds</span></div>
+            <h4><span lang="ko">보고서에 딛고 선 답</span><span lang="en">An answer standing on the report</span></h4>
+            <p><span lang="ko">근거를 검색해 LLM에 넣고, 답변을 <strong>출처와 함께</strong> 보여준다. 이제 모든 진술이 열어 확인할 수 있는 named source 위에 선다.</span><span lang="en">The grounds are retrieved, fed to the LLM, and the answer is shown <strong>together with its sources</strong>. Now every statement stands on a named source you can open and check.</span></p>
+            <div class="mono" lang="ko">ask_with_sources(query)
+# 답변 + Sources: [G01-S01]
+#   Goal 1 No poverty · pp. 10-11</div>
+            <div class="mono" lang="en">ask_with_sources(query)
+# answer + Sources: [G01-S01]
+#   Goal 1 No poverty · pp. 10-11</div>
+          </div>
+        </div>
+
+        <div class="code">
+          <div class="code-bar"><span class="dot"></span><span class="fname">workshop_code.md</span><span class="cell">10-3</span></div>
+<pre><span class="c-kw">def</span> <span class="c-fn">ask_with_sources</span>(q, k=<span class="c-num">3</span>):
+    results = store.<span class="c-fn">similarity_search_with_score</span>(q, k=k)   <span class="c-com"># 1. <span lang="ko">검색</span><span lang="en">retrieve</span></span>
+    context = <span class="c-str">"\n\n"</span>.<span class="c-fn">join</span>(doc.page_content <span class="c-kw">for</span> doc, _ <span class="c-kw">in</span> results)
+    prompt = <span class="c-str">f"Use only the following sources... {context}\n\nQuestion: {q}"</span>
+    answer = llm.<span class="c-fn">invoke</span>(prompt)                            <span class="c-com"># 3. <span lang="ko">생성</span><span lang="en">generate</span></span>
+    <span class="c-fn">print</span>(answer)
+    <span class="c-fn">print</span>(<span class="c-str">"\nSources"</span>)                                    <span class="c-com"># 4. <span lang="ko">전거</span><span lang="en">provenance</span></span>
+    <span class="c-kw">for</span> doc, _ <span class="c-kw">in</span> results:
+        m = doc.metadata
+        <span class="c-fn">print</span>(<span class="c-str">f"  [{m['id']}] Goal {m['goal']} · pp. {m['pages']}"</span>)</pre>
+        </div>
+
+        <div class="pull"><span lang="ko">같은 질문, 두 개의 답. 첫째는 확신에 차 있으나 확인할 수 없고, 둘째는 <span class="accent">열어볼 수 있는 출처</span> 위에 선다. 그 대비가 전거 우선 RAG의 전부다.</span><span lang="en">One question, two answers. The first is confident but uncheckable; the second stands on <span class="accent">sources you can open</span>. That contrast is the whole of provenance-first RAG.</span></div>
+
+        <a class="ghlink" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/workshop_code.md#L402" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          workshop_code.md · STEP 10 <span class="arrow">↗</span>
+        </a>
+        <a class="sublink" href="html/step10_answer.html">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M4 10h16M9 10v9"/></svg>
+          <span lang="ko">보조자료 · 답변이 되기까지</span><span lang="en">Companion · From Retrieval to Answer</span> <span class="arrow">→</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ MESSAGE ============ -->
+    <section id="message">
+      <div class="inner">
+        <div class="eyebrow"><span lang="ko">마무리 · 핵심 메시지</span><span lang="en">Closing · The core message</span></div>
+        <h2><span lang="ko">구조를 먼저 이해하고, 정제는 거기에 맞춘다</span><span lang="en">Understand the structure first, then fit the cleaning to it</span></h2>
+        <div class="pull"><span lang="ko">자료의 구조가 <span class="accent">검색 단위</span>를 정하고,<br>검색 단위가 답변의 <span class="accent">전거(典據) 단위</span>를 정한다.</span><span lang="en">The structure of the material sets <span class="accent">the unit of retrieval</span>,<br>and the unit of retrieval sets <span class="accent">the unit of provenance</span> in the answer.</span></div>
+
+        <div class="chain" style="margin-top:8px">
+          <div class="lk lit"><span class="cn"><span lang="ko">구조를 안다</span><span lang="en">Know the structure</span></span><span class="cs">Understand</span><span class="fail" style="color:var(--paper-dim)"><span lang="ko">무엇이 목차이고<br>무엇이 본문인가</span><span lang="en">what is heading<br>and what is body</span></span></div>
+          <div class="lk lit"><span class="cn"><span lang="ko">그에 맞춰 정제한다</span><span lang="en">Clean to match it</span></span><span class="cs">Clean</span><span class="fail" style="color:var(--paper-dim)"><span lang="ko">구조에 없는 것은<br>버린다</span><span lang="en">what the structure<br>omits, discard</span></span></div>
+          <div class="lk lit"><span class="cn"><span lang="ko">구조대로 자른다</span><span lang="en">Cut along the structure</span></span><span class="cs">Chunk</span><span class="fail" style="color:var(--paper-dim)"><span lang="ko">경계가 곧<br>검색 단위</span><span lang="en">the boundary is<br>the unit of retrieval</span></span></div>
+          <div class="lk lit"><span class="cn"><span lang="ko">전거가 따라온다</span><span lang="en">Provenance follows</span></span><span class="cs">Cite</span><span class="fail" style="color:var(--paper-dim)"><span lang="ko">구조가 곧<br>출처 주소</span><span lang="en">the structure is<br>the source address</span></span></div>
+        </div>
+
+        <p style="margin-top:30px"><span lang="ko">오늘 두 번의 실패를 봤다. <strong>STEP 2</strong>는 구조를 모른 채 글자 수로 잘라서 실패했고, <strong>STEP 3</strong>의 옛 방식은 구조를 <em>추측</em>하려다 실패했다. 두 실패의 원인은 같다 — <strong class="cinnabar-text">자료의 구조를 먼저 확정하지 않았다</strong>는 것.</span><span lang="en">We saw two failures today. <strong>STEP 2</strong> failed by cutting on character count without knowing the structure; the old approach in <strong>STEP 3</strong> failed by trying to <em>guess</em> the structure. Both failures have the same cause — <strong class="cinnabar-text">the structure of the material was not established first</strong>.</span></p>
+
+        <p><span lang="ko">구조를 확정하고 나면 나머지는 따라온다. 무엇을 버릴지가 분명해지고, 어디서 자를지가 분명해지고, 잘린 조각마다 <strong>제 주소</strong>가 붙는다. 전거는 마지막에 덧붙이는 장식이 아니라, <strong class="teal-text">구조를 지킨 결과로 저절로 남는 것</strong>이다.</span><span lang="en">Once the structure is settled, the rest follows. What to discard becomes clear, where to cut becomes clear, and every piece cut carries <strong>its own address</strong>. Provenance is not an ornament added at the end — it is <strong class="teal-text">what remains of its own accord when the structure has been kept</strong>.</span></p>
+
+        <div class="summary"><span lang="ko">그러므로 RAG에서 가장 먼저 할 일은 임베딩 모델을 고르는 것이 아니라, <strong>내 자료가 어떻게 생겼는지 아는 것</strong>이다.</span><span lang="en">So the first thing to do in RAG is not to choose an embedding model, but <strong>to know what your own material looks like</strong>.</span></div>
+
+        <p><span lang="ko">이 워크샵이 남기는 것은 챗봇 한 개가 아니라, <strong>여러분의 자료에 그대로 옮겨 쓸 수 있는 방법</strong>이다. 실록이든 관보든 문학 텍스트든 철학 원전이든 — 자료마다 구조가 놓인 자리는 다르지만, <strong>구조를 먼저 읽고 거기에 정제를 맞춘다</strong>는 순서는 같다. 그 순서를 세우는 자리에서 오늘의 작업이 다시 쓰인다.</span><span lang="en">What this workshop leaves you is not one chatbot but <strong>a method you can carry straight over to your own material</strong>. Veritable records, official gazettes, literary texts, philosophical originals — where the structure sits differs with every source, but the order is the same: <strong>read the structure first, then fit the cleaning to it</strong>. Wherever you set that order, today's work is written again.</span></p>
+      </div>
+    </section>
+
+    <!-- ============ RESOURCES ============ -->
+    <section id="resources" class="tight">
+      <div class="inner">
+        <div class="eyebrow teal"><span lang="ko">마무리 · 자료</span><span lang="en">Closing · Resources</span></div>
+        <h2><span lang="ko">GitHub · 참고자료</span><span lang="en">GitHub · resources</span></h2>
+        <p class="lead"><span lang="ko">모든 코드는 셀 단위로 공개돼 있다. 각 블록은 Colab 셀 하나에 대응한다.</span><span lang="en">All the code is published cell by cell. Each block corresponds to one Colab cell.</span></p>
+        <div class="reslist">
+          <a class="rescard" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/Workshop_procedure.md" target="_blank" rel="noopener">
+            <div class="rt"><span lang="ko">따라 하는 방법</span><span lang="en">How to follow along</span></div>
+            <div class="rn">Workshop_procedure.md</div>
+            <div class="rd"><span lang="ko">시작 전 준비 · 스택 · 파이프라인 개요 (한/영)</span><span lang="en">Preparation · stack · pipeline overview (KO/EN)</span></div>
+          </a>
+          <a class="rescard" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/workshop_code.md" target="_blank" rel="noopener">
+            <div class="rt"><span lang="ko">셀 단위 코드</span><span lang="en">Cell-by-cell code</span></div>
+            <div class="rn">workshop_code.md</div>
+            <div class="rd"><span lang="ko">STEP 1–10 · 복사해서 붙여넣는 코드 블록</span><span lang="en">STEP 1–10 · copy-and-paste code blocks</span></div>
+          </a>
+          <a class="rescard" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/build_xml.py" target="_blank" rel="noopener">
+            <div class="rt"><span lang="ko">구조화 스크립트</span><span lang="en">The structuring script</span></div>
+            <div class="rn">build_xml.py</div>
+            <div class="rd"><span lang="ko">PDF의 조판을 읽어 계층 XML로 · STEP 3의 본체</span><span lang="en">Reads the PDF's typesetting into hierarchical XML · the body of STEP 3</span></div>
+          </a>
+          <a class="rescard" href="https://github.com/littlekg87/DH2026/tree/main/Workshop_RAG" target="_blank" rel="noopener">
+            <div class="rt"><span lang="ko">리포지토리</span><span lang="en">Repository</span></div>
+            <div class="rn">littlekg87 / DH2026</div>
+            <div class="rd"><span lang="ko">Workshop_RAG 폴더 전체</span><span lang="en">The whole Workshop_RAG folder</span></div>
+          </a>
+        </div>
+
+        <div class="stackgrid" style="margin-top:36px">
+          <div class="stackcard"><div class="sk"><span lang="ko">코퍼스</span><span lang="en">Corpus</span></div><div class="sv">SDG Report 2025</div><div class="sd"><span lang="ko">UN Statistics Division · 51쪽</span><span lang="en">UN Statistics Division · 51 pp.</span></div></div>
+          <div class="stackcard"><div class="sk"><span lang="ko">프레임워크</span><span lang="en">Framework</span></div><div class="sv">LangChain</div></div>
+          <div class="stackcard"><div class="sk"><span lang="ko">인코더</span><span lang="en">Encoder</span></div><div class="sv">all-MiniLM-L6-v2</div></div>
+          <div class="stackcard"><div class="sk"><span lang="ko">벡터 저장소</span><span lang="en">Vector store</span></div><div class="sv">FAISS</div></div>
+          <div class="stackcard"><div class="sk">LLM</div><div class="sv">Qwen3-0.6B</div></div>
+          <div class="stackcard"><div class="sk"><span lang="ko">런타임</span><span lang="en">Runtime</span></div><div class="sv">Colab · T4 GPU</div></div>
+        </div>
+
+        <p style="margin-top:40px;font-family:var(--mono);font-size:.78rem;color:var(--paper-faint)">DH2026 · Build a Working RAG in Half a Day · UN Policy Reports with LangChain</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // active nav highlight via IntersectionObserver
+  const navLinks = Array.from(document.querySelectorAll('nav a'));
+  const linkFor = id => navLinks.find(a => a.getAttribute('href') === '#' + id);
+  const sections = document.querySelectorAll('section[id]');
+
+  // 페이지 번호 — 섹션 순서를 그대로 쪽수로 쓴다
+  const secList = Array.from(sections);
+  const pad2    = n => String(n).padStart(2, '0');
+  const pageCur = document.getElementById('pagecur');
+  const pageTot = document.getElementById('pagetot');
+  if (pageTot) pageTot.textContent = pad2(secList.length);
+
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(a => a.classList.remove('active'));
+        const link = linkFor(e.target.id);
+        if (link) link.classList.add('active');
+
+        const idx = secList.indexOf(e.target);
+        if (idx >= 0 && pageCur) pageCur.textContent = pad2(idx + 1);
+      }
+    });
+  }, { rootMargin: '-45% 0px -50% 0px', threshold: 0 });
+
+  sections.forEach(s => obs.observe(s));
+
+  // mobile nav toggle
+  const nav = document.getElementById('nav');
+  const toggle = document.getElementById('navtoggle');
+  toggle.addEventListener('click', () => nav.classList.toggle('open'));
+  navLinks.forEach(a => a.addEventListener('click', () => {
+    if (window.innerWidth <= 900) nav.classList.remove('open');
+  }));
+
+  // 속성값은 CSS 로 못 바꾸므로 스크립트가 갈아 끼운다
+  const paintNavLabel = () => toggle.setAttribute('aria-label', L('목차 열기', 'Open contents'));
+  paintNavLabel();
+  onLangChange(paintNavLabel);
+
+  // ① 출처 확인 — 각주가 하나씩 무너진다
+  (() => {
+    const btn   = document.getElementById('probeBtn');
+    if (!btn) return;
+    const label = document.getElementById('probeLabel');
+    const card  = document.getElementById('aicard');
+    const rows  = Array.from(document.querySelectorAll('#checks .chk'));
+    const vd    = document.getElementById('verdict');
+    const dc    = document.getElementById('disclaim');
+    let busted = false, timers = [];
+
+    // 버튼 문구는 상태와 언어에서 그때그때 다시 만든다
+    const paint = () => {
+      label.textContent = busted ? L('다시', 'Again') : L('출처 확인', 'Check the sources');
+    };
+
+    const reset = () => {
+      timers.forEach(clearTimeout); timers = [];
+      card.classList.remove('busted');
+      rows.forEach(r => r.classList.remove('show'));
+      vd.classList.remove('show');
+      dc.classList.remove('show');
+      busted = false;
+      paint();
+    };
+
+    const bust = () => {
+      card.classList.add('busted');
+      rows.forEach((r, i) => timers.push(setTimeout(() => r.classList.add('show'), 550 * i)));
+      timers.push(setTimeout(() => vd.classList.add('show'), 550 * rows.length + 250));
+      timers.push(setTimeout(() => dc.classList.add('show'), 550 * rows.length + 800));
+      busted = true;
+      paint();
+    };
+
+    btn.addEventListener('click', () => busted ? reset() : bust());
+    paint();
+    onLangChange(paint);
+  })();
+
+  // ② 같은 질문, 두 개의 경로 — 전환하면 마디가 차례로 켜진다
+  (() => {
+    const sw = document.getElementById('pathSwitch');
+    if (!sw) return;
+    const cap    = document.getElementById('flowCap');
+    const tracks = Array.from(document.querySelectorAll('.track'));
+    const capFor = mode => mode === 'llm'
+      ? '<span class="bad">' + L('그 사이에 무슨 일이 있었는지, 우리는 모른다.',
+                                 'What happened in between, we cannot know.') + '</span>'
+      : '<span class="em">' + L('먼저 찾고, 찾은 것에만 근거해서 말한다. 출처가 남는다.',
+                                'Find first, then speak only on what was found. The source remains.') + '</span>';
+    let timers = [], cur = 'llm';
+
+    const run = mode => {
+      timers.forEach(clearTimeout); timers = [];
+      cur = mode;
+      tracks.forEach(t => {
+        const on = t.dataset.track === mode;
+        t.classList.toggle('on', on);
+        t.querySelectorAll('.fnode, .farrow').forEach(el => el.classList.remove('in'));
+        if (!on) return;
+        const steps = Array.from(t.children);
+        steps.forEach((el, i) => timers.push(setTimeout(() => el.classList.add('in'), 190 * i)));
+      });
+      cap.innerHTML = capFor(mode);
+      sw.querySelectorAll('.sw').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    };
+
+    sw.querySelectorAll('.sw').forEach(b => b.addEventListener('click', () => run(b.dataset.mode)));
+    run('llm');   // 첫 진입 상태
+    // 언어만 바뀔 때는 애니메이션을 다시 돌리지 않고 문구만 갈아 끼운다
+    onLangChange(() => { cap.innerHTML = capFor(cur); });
+  })();
+
+  // ③ 사슬이 켜진다 — 「실제로는?」
+  (() => {
+    const btn = document.getElementById('chainBtn');
+    if (!btn) return;
+    const label = document.getElementById('chainLabel');
+    const cap   = document.getElementById('chainCap');
+    const pull  = document.getElementById('chainPull');
+    const links = Array.from(document.querySelectorAll('#chain .lk'));
+    const capBefore = () => L(
+      '일곱 개의 마디. 초기에는 <span class="gold">금색으로 표시된 둘</span>만 좋으면 된다고 믿었다.',
+      'Seven links. Early on we believed only <span class="gold">the two marked in gold</span> had to be good.');
+    const capAfter = () => L(
+      '일곱 마디 <strong style="color:var(--cinnabar-soft)">모두</strong>가 답변의 품질을 좌우한다. 번호에 마우스를 올리면 근거 문헌이 나옵니다.',
+      '<strong style="color:var(--cinnabar-soft)">All</strong> seven links govern the quality of the answer. Hover a number to see the supporting literature.');
+    let lit = false, timers = [];
+
+    // 사슬이 켜졌는지에 따라 문구가 갈린다 — 언어가 바뀌면 현재 상태로 다시 그린다
+    const paint = () => {
+      cap.innerHTML = lit ? capAfter() : capBefore();
+      label.textContent = lit ? L('되돌리기', 'Undo') : L('실제로는?', 'And in fact?');
+    };
+
+    const reset = () => {
+      timers.forEach(clearTimeout); timers = [];
+      links.forEach(l => l.classList.remove('lit'));
+      pull.classList.remove('show');
+      lit = false;
+      paint();
+    };
+
+    const light = () => {
+      links.forEach((l, i) => timers.push(setTimeout(() => l.classList.add('lit'), 260 * i)));
+      lit = true;
+      label.textContent = L('되돌리기', 'Undo');
+      timers.push(setTimeout(() => { cap.innerHTML = capAfter(); }, 260 * links.length));
+      timers.push(setTimeout(() => pull.classList.add('show'), 260 * links.length + 350));
+    };
+
+    btn.addEventListener('click', () => lit ? reset() : light());
+    paint();
+    onLangChange(paint);
+  })();
+
+  // 각주 팝업: 사이드바·화면 밖으로 넘치면 안쪽으로 밀어 넣는다
+  document.querySelectorAll('.fn').forEach(fn => {
+    const pop = fn.querySelector('.fnpop');
+    if (!pop) return;
+
+    const place = () => {
+      pop.style.setProperty('--sx', '0px');
+      const r    = pop.getBoundingClientRect();
+      const pad  = 16;
+      const left = window.innerWidth > 900 ? 270 + pad : pad;   // 사이드바 폭
+      let dx = 0;
+      if (r.left < left)                        dx = left - r.left;
+      else if (r.right > window.innerWidth - pad) dx = window.innerWidth - pad - r.right;
+      pop.style.setProperty('--sx', dx + 'px');
+    };
+
+    fn.addEventListener('mouseenter', place);
+    fn.addEventListener('focus', place);
+    // 터치: 탭하면 포커스가 들어가 팝업이 뜨고, Esc 나 바깥 탭으로 닫힌다
+    fn.addEventListener('keydown', e => { if (e.key === 'Escape') fn.blur(); });
+  });
+</script>
+
+</body>
+</html>

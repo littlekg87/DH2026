@@ -1,0 +1,299 @@
+/* ═══════════════════════════════════════════════════════════════
+   DH2026 Workshop — 보조자료 공통 테마
+   발표자료(rag_workshop_slides_002.html)와 같은 색·서체를 쓰되,
+   투사용이 아니라 정독용이므로 밀도를 조금 높인다.
+
+   라이트 모드는 나중에 :root[data-theme="light"] 블록만 추가하면 된다.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root{
+  --ink:#161b26;
+  --ink-2:#1e2534;
+  --ink-3:#252d40;
+  --paper:#e8e4d8;
+  --paper-dim:#a8a596;
+  --paper-faint:#6b6f7d;
+  --cinnabar:#c1533a;
+  --cinnabar-soft:#d97757;
+  --teal:#4a9d8e;
+  --teal-soft:#6fc0b0;
+  --gold:#c9a86a;
+  --line:#2f3849;
+  --line-soft:#3a4457;
+  --sans:'Noto Sans KR',system-ui,-apple-system,sans-serif;
+  --serif:'Noto Serif KR',Georgia,serif;
+  --mono:'JetBrains Mono','Cascadia Code',ui-monospace,monospace;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{animation:none!important;transition:none!important}
+}
+body{
+  background:var(--ink);color:var(--paper);
+  font-family:var(--sans);font-weight:400;font-size:16px;line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- 머리띠 ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:12px 30px;background:rgba(22,27,38,.94);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .brand{font-family:var(--serif);font-weight:700;font-size:1.06rem;color:var(--paper)}
+.topbar .step{
+  font-family:var(--mono);font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink);background:var(--gold);padding:4px 11px;border-radius:5px;font-weight:700;
+}
+.topbar .back{
+  margin-left:auto;font-family:var(--mono);font-size:.86rem;color:var(--paper-dim);
+  text-decoration:none;border:1px solid var(--line-soft);border-radius:7px;padding:7px 14px;
+  transition:all .16s ease;
+}
+.topbar .back:hover{border-color:var(--teal);color:var(--paper);background:rgba(74,157,142,.08)}
+
+/* ---------- 레이아웃 ---------- */
+.wrap{max-width:940px;margin:0 auto;padding:0 30px 100px}
+section{padding:58px 0 8px;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0}
+
+.eyebrow{
+  font-family:var(--mono);font-size:.82rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--cinnabar-soft);margin-bottom:16px;display:flex;align-items:center;gap:12px;
+}
+.eyebrow::before{content:"";width:26px;height:1px;background:var(--cinnabar)}
+.eyebrow.teal{color:var(--teal-soft)}
+.eyebrow.teal::before{background:var(--teal)}
+
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(1.9rem,4.4vw,2.9rem);line-height:1.22;letter-spacing:-.02em}
+h2{font-family:var(--serif);font-weight:700;font-size:clamp(1.5rem,3vw,2.1rem);line-height:1.28;letter-spacing:-.015em}
+h3{font-family:var(--sans);font-weight:700;font-size:1.1rem;margin-bottom:9px}
+p{color:var(--paper-dim);margin-top:15px;max-width:74ch}
+p strong,li strong{color:var(--paper);font-weight:600}
+.lead{font-size:1.16rem;color:var(--paper-dim);margin-top:18px;line-height:1.8;max-width:72ch}
+.cin{color:var(--cinnabar-soft);font-weight:500}
+.tl{color:var(--teal-soft);font-weight:500}
+.gd{color:var(--gold);font-weight:500}
+
+/* ---------- 히어로 ---------- */
+.hero{
+  padding:64px 0 46px;
+  background:radial-gradient(ellipse at 12% 0%,rgba(193,83,58,.10),transparent 58%),
+             radial-gradient(ellipse at 92% 100%,rgba(74,157,142,.09),transparent 52%);
+  border-bottom:1px solid var(--line);
+}
+.hero .kicker{font-family:var(--mono);font-size:.74rem;letter-spacing:.24em;text-transform:uppercase;color:var(--teal-soft);margin-bottom:18px}
+.hero .sub{font-family:var(--serif);font-size:1.18rem;color:var(--paper-dim);margin-top:18px;line-height:1.6;max-width:66ch}
+
+/* ---------- 요약 바 ---------- */
+.summary{
+  border-left:3px solid var(--cinnabar);padding:15px 21px;margin:26px 0;
+  background:rgba(193,83,58,.055);font-size:1.04rem;color:var(--paper);
+}
+.summary.teal{border-left-color:var(--teal);background:rgba(74,157,142,.06)}
+.summary.gold{border-left-color:var(--gold);background:rgba(201,168,106,.06)}
+
+/* ---------- 큰 문장 ---------- */
+.pull{
+  font-family:var(--serif);font-weight:700;font-size:clamp(1.35rem,2.9vw,1.95rem);
+  line-height:1.45;color:var(--paper);margin:34px 0;padding-left:24px;
+  border-left:3px solid var(--cinnabar);
+}
+.pull .accent{color:var(--cinnabar-soft)}
+.pull.teal{border-left-color:var(--teal)}
+.pull.teal .accent{color:var(--teal-soft)}
+
+/* ---------- 통계 카드 ---------- */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:26px 0}
+.stat{border:1px solid var(--line);border-radius:10px;padding:18px 18px 20px;background:var(--ink-2)}
+.stat .k{font-family:var(--mono);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase;color:var(--paper-faint)}
+.stat .v{font-family:var(--serif);font-weight:700;font-size:1.9rem;line-height:1.1;margin-top:8px;color:var(--paper)}
+.stat .v.cin{color:var(--cinnabar-soft)}
+.stat .v.tl{color:var(--teal-soft)}
+.stat .v.gd{color:var(--gold)}
+.stat .d{font-size:.95rem;color:var(--paper-dim);margin-top:7px;line-height:1.55}
+
+/* ---------- 대비 박스 ---------- */
+.contrast{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:26px 0}
+@media(max-width:720px){.contrast{grid-template-columns:1fr}}
+.box{border:1px solid var(--line);border-radius:10px;padding:19px 21px;background:var(--ink-2)}
+.box.bad{border-top:3px solid var(--cinnabar)}
+.box.good{border-top:3px solid var(--teal)}
+.box .tag{font-family:var(--mono);font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+.box.bad .tag{color:var(--cinnabar-soft)}
+.box.good .tag{color:var(--teal-soft)}
+.box h4{font-size:1.1rem;font-weight:700;color:var(--paper);margin-bottom:7px}
+.box p{font-size:1.01rem;margin-top:7px;max-width:none}
+
+/* ---------- 코드 ---------- */
+.code{background:var(--ink-3);border:1px solid var(--line);border-radius:9px;margin:22px 0;overflow:hidden}
+.code-bar{display:flex;align-items:center;gap:9px;padding:9px 15px;background:rgba(0,0,0,.22);border-bottom:1px solid var(--line)}
+.code-bar .dot{width:9px;height:9px;border-radius:50%;background:var(--line-soft)}
+.code-bar .fname{font-family:var(--mono);font-size:.84rem;color:var(--paper-faint);margin-left:5px}
+.code-bar .cell{margin-left:auto;font-family:var(--mono);font-size:.8rem;color:var(--teal-soft);letter-spacing:.05em}
+pre{font-family:var(--mono);font-size:.9rem;line-height:1.66;padding:15px 17px;overflow-x:auto;color:#cdd3e0}
+pre::-webkit-scrollbar{height:8px}
+pre::-webkit-scrollbar-thumb{background:var(--line-soft);border-radius:4px}
+.c-kw{color:#c98fd6}.c-fn{color:var(--teal-soft)}.c-str{color:var(--gold)}
+.c-num{color:#e0a878}.c-com{color:var(--paper-faint);font-style:italic}.c-var{color:#8fb8e8}
+code{font-family:var(--mono);font-size:.88em;color:var(--gold)}
+
+/* ---------- 비유 카드 ---------- */
+.analogy{
+  display:flex;gap:16px;align-items:flex-start;
+  border:1px solid var(--line);border-left:3px solid var(--gold);
+  border-radius:9px;padding:18px 21px;margin:24px 0;background:var(--ink-2);
+}
+.analogy .seal{
+  flex-shrink:0;width:42px;height:42px;border:1.5px solid var(--gold);border-radius:8px;
+  background:rgba(201,168,106,.06);display:grid;place-items:center;
+}
+.analogy .seal svg{width:21px;height:21px;stroke:var(--gold);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.analogy .term{font-family:var(--serif);font-weight:600;color:var(--gold);font-size:1.12rem;display:block}
+.analogy p{margin-top:6px;font-size:1.02rem;max-width:none}
+
+/* ---------- 조작부 ---------- */
+.controls{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  border:1px solid var(--line-soft);border-radius:10px;padding:16px 20px;
+  background:var(--ink-2);margin:24px 0 0;
+}
+.controls .lbl{font-family:var(--mono);font-size:.86rem;letter-spacing:.04em;text-transform:uppercase;color:var(--paper-faint)}
+.btn{
+  font-family:var(--mono);font-size:.9rem;letter-spacing:.03em;color:var(--paper);
+  background:var(--ink-3);border:1px solid var(--line-soft);border-radius:8px;
+  padding:10px 19px;cursor:pointer;transition:all .16s ease;display:inline-flex;align-items:center;gap:9px;
+}
+.btn:hover{border-color:var(--cinnabar);background:rgba(193,83,58,.09)}
+.btn.on{border-color:var(--teal);background:rgba(74,157,142,.13);color:var(--teal-soft)}
+.btn .ic{color:var(--cinnabar-soft)}
+
+input[type=range]{
+  -webkit-appearance:none;appearance:none;height:5px;border-radius:3px;
+  background:var(--line-soft);outline:none;flex:1;min-width:180px;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:19px;height:19px;border-radius:50%;
+  background:var(--cinnabar-soft);cursor:pointer;border:3px solid var(--ink);
+  box-shadow:0 0 0 1px var(--cinnabar);
+}
+input[type=range]::-moz-range-thumb{
+  width:19px;height:19px;border-radius:50%;background:var(--cinnabar-soft);
+  cursor:pointer;border:3px solid var(--ink);box-shadow:0 0 0 1px var(--cinnabar);
+}
+select{
+  font-family:var(--mono);font-size:.9rem;color:var(--paper);background:var(--ink-3);
+  border:1px solid var(--line-soft);border-radius:8px;padding:9px 13px;cursor:pointer;
+}
+
+/* ---------- 청크 뷰어 ---------- */
+.chunkbox{border:1px solid var(--line);border-radius:10px;background:var(--ink-2);margin:20px 0;overflow:hidden}
+.chunkbox .head{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:11px 18px;background:rgba(0,0,0,.2);border-bottom:1px solid var(--line);
+}
+.chunkbox .cid{font-family:var(--mono);font-size:.88rem;color:var(--gold)}
+.chunkbox .meta{font-family:var(--mono);font-size:.84rem;color:var(--paper-faint)}
+.chunkbox .body{padding:18px 20px;font-size:1.02rem;line-height:1.85;color:var(--paper-dim);white-space:pre-wrap;word-break:break-word}
+.chunkbox .body .hl-cut{background:rgba(193,83,58,.22);color:var(--paper);border-bottom:2px solid var(--cinnabar);padding:1px 2px}
+.chunkbox .body .hl-noise{background:rgba(201,168,106,.18);color:var(--gold);padding:1px 3px;border-radius:3px}
+.chunkbox .body .hl-num{background:rgba(111,192,176,.13);color:var(--teal-soft);padding:1px 3px;border-radius:3px}
+
+.tags{display:flex;gap:7px;flex-wrap:wrap;margin-left:auto}
+.tag-pill{font-family:var(--mono);font-size:.78rem;letter-spacing:.02em;padding:4px 11px;border-radius:11px;border:1px solid}
+.tag-pill.cut{color:var(--cinnabar-soft);border-color:rgba(193,83,58,.5);background:rgba(193,83,58,.1)}
+.tag-pill.noise{color:var(--gold);border-color:rgba(201,168,106,.5);background:rgba(201,168,106,.1)}
+.tag-pill.num{color:var(--teal-soft);border-color:rgba(74,157,142,.5);background:rgba(74,157,142,.1)}
+
+/* ---------- 캡션 ---------- */
+.cap{font-family:var(--mono);font-size:.89rem;color:var(--paper-faint);margin-top:13px;line-height:1.75;letter-spacing:.02em}
+.cap .gd{color:var(--gold)}
+.cap .cin{color:var(--cinnabar-soft)}
+.cap .tl{color:var(--teal-soft)}
+
+/* ---------- 꼬리 ---------- */
+.foot{margin-top:60px;padding-top:24px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:.84rem;color:var(--paper-faint);line-height:1.95}
+.foot a{color:var(--teal-soft);text-decoration:none}
+.foot a:hover{text-decoration:underline}
+
+@media(max-width:640px){
+  .wrap{padding:0 18px 70px}
+  .topbar{padding:10px 18px;gap:10px}
+  body{font-size:15px}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   라이트 모드 — 발표자료의 밤/낮 형제
+   색 이름은 그대로 두고 값만 바꾼다. 그래서 모든 컴포넌트가
+   자동으로 따라온다. (색을 변수로만 쓴 이유가 이것이다)
+
+   주의 — 다크에서 `-soft`는 더 밝은 값이지만,
+   라이트에서는 더 어두운 값이어야 대비가 산다.
+   ═══════════════════════════════════════════════════════════════ */
+:root[data-theme="light"]{
+  --ink:#f4f0e6;          /* 종이빛 배경 */
+  --ink-2:#ebe5d6;        /* 카드 */
+  --ink-3:#e3dcc9;        /* 코드·패널 */
+  --paper:#1b1e2a;        /* 먹빛 본문 */
+  --paper-dim:#4b5061;
+  --paper-faint:#7d7969;
+  --cinnabar:#b0402a;
+  --cinnabar-soft:#963421;
+  --teal:#35755e;
+  --teal-soft:#265f4a;
+  --gold:#8a6a28;
+  --line:#dbd3bf;
+  --line-soft:#c6bca2;
+}
+:root[data-theme="light"] body{
+  background:var(--ink);
+}
+:root[data-theme="light"] .topbar{background:rgba(244,240,230,.94)}
+:root[data-theme="light"] .topbar .step{color:#fff}
+:root[data-theme="light"] pre{color:#2a2f3d}
+:root[data-theme="light"] .code-bar{background:rgba(0,0,0,.05)}
+:root[data-theme="light"] .c-kw{color:#8b3fa0}
+:root[data-theme="light"] .c-num{color:#a35a1e}
+:root[data-theme="light"] .c-var{color:#2f5f96}
+:root[data-theme="light"] .hero{
+  background:radial-gradient(ellipse at 12% 0%,rgba(176,64,42,.09),transparent 58%),
+             radial-gradient(ellipse at 92% 100%,rgba(53,117,94,.09),transparent 52%);
+}
+:root[data-theme="light"] .tip,
+:root[data-theme="light"] .fnpop{background:rgba(244,240,230,.98)}
+/* 어두운 배경 전제로 만든 그림자를 약하게 */
+:root[data-theme="light"] [style*="box-shadow"],
+:root[data-theme="light"] .tip{box-shadow:0 8px 24px rgba(60,50,30,.16)!important}
+
+/* ═══════════════════════════════════════════════════════════════
+   언어 전환 — 두 언어를 다 심어 두고 CSS로 하나만 보인다.
+   자바스크립트는 html[data-lang] 만 바꾼다.
+   ═══════════════════════════════════════════════════════════════ */
+:root[data-lang="ko"] [lang="en"]{display:none!important}
+:root[data-lang="en"] [lang="ko"]{display:none!important}
+
+/* ═══════════════════════════════════════════════════════════════
+   토글 — 머리띠 오른쪽에 붙는다
+   ═══════════════════════════════════════════════════════════════ */
+.tgroup{display:flex;align-items:center;gap:8px;margin-left:auto}
+.tg{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:.82rem;color:var(--paper-dim);
+  background:var(--ink-2);border:1px solid var(--line-soft);border-radius:8px;
+  padding:6px 12px;cursor:pointer;transition:all .16s ease;line-height:1;
+}
+.tg:hover{border-color:var(--teal);color:var(--paper)}
+.tg .ic{font-size:.95rem}
+.tg .sep{color:var(--line-soft)}
+.tg .on{color:var(--paper);font-weight:700}
+.tg .off{color:var(--paper-faint)}
+.topbar .back{margin-left:0}
+@media(max-width:640px){
+  .tg{padding:5px 9px;font-size:.76rem}
+  .topbar .brand{display:none}
+}

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>검색 결과가 답변이 되기까지 · From Retrieval to Answer — DH2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<script src="ui.js"></script>
+<style>
+  .hit{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:9px;
+    background:var(--ink-2);padding:15px 18px;margin-bottom:11px}
+  .hit .top{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .hit .rk{font-family:var(--mono);font-size:.86rem;color:var(--paper-faint)}
+  .hit .dd{font-family:var(--mono);font-size:1rem;color:var(--teal-soft)}
+  .hit .prov{font-family:var(--mono);font-size:.84rem;color:var(--gold);margin-left:auto}
+  .hit .hd{font-size:1rem;color:var(--paper);margin-top:9px;font-weight:500;line-height:1.5}
+  .hit .bd{font-size:.94rem;color:var(--paper-dim);margin-top:9px;line-height:1.75;
+    max-height:96px;overflow:hidden}
+  .hit .bd.open{max-height:none}
+  .hit .more{font-family:var(--mono);font-size:.8rem;color:var(--teal-soft);cursor:pointer;
+    margin-top:7px;display:inline-block}
+
+  .prompt{border:1px solid var(--line-soft);border-radius:11px;background:var(--ink-3);
+    margin:22px 0 0;overflow:hidden}
+  .prompt .h{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 17px;
+    background:rgba(0,0,0,.18);border-bottom:1px solid var(--line);
+    font-family:var(--mono);font-size:.84rem;color:var(--paper-faint)}
+  .prompt .h .sz{margin-left:auto;color:var(--gold)}
+  .prompt .body{padding:18px 20px;font-family:var(--mono);font-size:.85rem;line-height:1.85;
+    max-height:430px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+  .seg{display:block;padding:8px 11px;margin:5px 0;border-radius:6px;border-left:3px solid transparent;
+    opacity:0;transform:translateY(5px);transition:opacity .4s ease,transform .4s ease}
+  .seg.in{opacity:1;transform:translateY(0)}
+  .seg.instr{background:rgba(201,168,106,.13);border-left-color:var(--gold);color:var(--paper-dim)}
+  .seg.chunk{background:rgba(74,157,142,.12);border-left-color:var(--teal);color:var(--paper-dim)}
+  .seg.q{background:rgba(193,83,58,.14);border-left-color:var(--cinnabar);color:var(--paper)}
+  .seg .tag{display:block;font-size:.76rem;color:var(--paper-faint);margin-bottom:6px}
+
+  .flow{display:flex;align-items:stretch;flex-wrap:wrap;margin:26px 0 0}
+  .flow .n{flex:1 1 0;min-width:140px;border:1px solid var(--line);border-radius:11px;
+    background:var(--ink-2);padding:18px 15px;text-align:center;
+    opacity:.3;transform:translateY(7px);transition:all .45s ease}
+  .flow .n.on{opacity:1;transform:translateY(0);border-color:var(--teal)}
+  .flow .n.llm{border-style:dashed}
+  .flow .n.llm.on{border-color:var(--gold);background:rgba(201,168,106,.09)}
+  .flow .n .t{font-size:1.02rem;color:var(--paper);font-weight:500}
+  .flow .n .s{font-family:var(--mono);font-size:.78rem;color:var(--paper-faint);margin-top:7px}
+  .flow .n.llm .s{color:var(--gold)}
+  .flow .a{display:grid;place-items:center;padding:0 9px;color:var(--paper-faint);
+    opacity:.3;transition:opacity .45s ease}
+  .flow .a.on{opacity:1}
+  @media(max-width:820px){.flow{flex-direction:column}.flow .a{transform:rotate(90deg);padding:6px 0}}
+
+  .blackbox{border:1px dashed var(--gold);border-radius:11px;background:rgba(201,168,106,.07);
+    padding:24px;margin:22px 0 0;text-align:center}
+  .blackbox .big{font-family:var(--serif);font-size:1.3rem;color:var(--gold);font-weight:700}
+  .blackbox p{margin:10px auto 0;max-width:56ch;color:var(--paper-dim)}
+
+  .ktab{display:flex;gap:8px;flex-wrap:wrap}
+  .ktab button{font-family:var(--mono);font-size:.86rem;padding:8px 16px;border-radius:8px;
+    border:1px solid var(--line-soft);background:var(--ink-2);color:var(--paper-dim);cursor:pointer}
+  .ktab button.on{border-color:var(--teal);color:var(--teal-soft);background:rgba(74,157,142,.15)}
+
+  .srcline{display:grid;grid-template-columns:104px 1fr;gap:5px 14px;padding:11px 16px;
+    border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:8px;
+    background:var(--ink-2);margin-bottom:8px;align-items:baseline}
+  .srcline .id{font-family:var(--mono);font-size:.86rem;color:var(--gold)}
+  .srcline .pv{font-size:.96rem;color:var(--paper-dim)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="step">STEP 9–10</span>
+  <span class="brand"><span lang="ko">검색 결과가 답변이 되기까지</span><span lang="en">From Retrieval to Answer</span></span>
+  <a class="back" href="../index.html#step10">← <span lang="ko">발표자료</span><span lang="en">Slides</span></a>
+</div>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="kicker">DH2026 Workshop · <span lang="ko">보조자료</span><span lang="en">Supplement</span></div>
+    <h1><span lang="ko">찾은 다음에는 무슨 일이 일어나는가</span><span lang="en">What Happens After You Find It</span></h1>
+    <div class="sub"><span lang="ko">거리를 재서 가까운 청크를 찾았다. 그런데 청크는 답변이 아니다. <b>찾아낸 글 조각들이 하나의 프롬프트로 조립되어 LLM에게 건네지고,</b> 모델이 그것을 읽고 답을 만든다. 그 사이의 과정은 대개 보이지 않는다. 여기서는 <b>실제로 건네지는 텍스트 전문</b>을 열어 본다.</span><span lang="en">We measured distances and found the nearest chunks. But a chunk is not an answer. <b>The retrieved fragments are assembled into a single prompt and handed to the LLM,</b> which reads it and composes a reply. That middle step is usually invisible. Here we open it up and read <b>the exact text that gets sent</b>.</span></div>
+  </div>
+
+  <section>
+    <div class="eyebrow teal">① <span lang="ko">STEP 9 · 찾은 것</span><span lang="en">STEP 9 · What was found</span></div>
+    <h2><span lang="ko">거리순 상위 세 개, 그리고 출처</span><span lang="en">The Three Nearest — and Where They Came From</span></h2>
+    <p><span lang="ko">질문 「<b>How many people still live in extreme poverty?</b>」로 176개 청크와 거리를 재어 가까운 순으로 뽑은 결과다. 각 결과에 <b>어느 Goal, 몇 쪽</b>인지가 함께 붙어 나온다 — STEP 4에서 심어 둔 메타데이터다.</span><span lang="en">We measured the query “<b>How many people still live in extreme poverty?</b>” against all 176 chunks and took the closest ones. Each result arrives with <b>its Goal and page range</b> attached — the metadata we planted back in STEP 4.</span></p>
+
+    <div id="hits"></div>
+
+    <div class="summary teal"><span lang="ko">셋 다 <b>Goal 1</b>이다. 아무도 “Goal 1에서 찾아라”라고 하지 않았다. 거리만 재었을 뿐인데 주제가 맞는 것들이 위로 올라왔다.</span><span lang="en">All three are from <b>Goal 1</b>. Nobody told the system to look there. We only measured distance, and the topically right ones rose to the top.</span></div>
+  </section>
+
+  <section>
+    <div class="eyebrow">② <span lang="ko">사이</span><span lang="en">The gap</span></div>
+    <h2><span lang="ko">검색과 생성 사이에 한 단계가 더 있다</span><span lang="en">There Is One More Step in Between</span></h2>
+    <p><span lang="ko">흔히 “검색해서 LLM이 답한다”고 말하지만, 그 사이에 <b>조립</b>이 있다. 찾아낸 청크 세 개는 그대로 모델에게 갈 수 없다 — <b>하나의 긴 텍스트로 합쳐지고, 앞뒤에 지시문과 질문이 붙는다.</b></span><span lang="en">People say “it retrieves and the LLM answers,” but between the two sits <b>assembly</b>. The three chunks cannot go to the model as they are — <b>they are joined into one long text, wrapped in an instruction and a question.</b></span></p>
+
+    <div class="flow" id="flow">
+      <div class="n"><div class="t"><span lang="ko">청크 3개</span><span lang="en">Three chunks</span></div><div class="s"><span lang="ko">검색 결과</span><span lang="en">Retrieved</span></div></div>
+      <div class="a">→</div>
+      <div class="n"><div class="t"><span lang="ko">프롬프트 조립</span><span lang="en">Prompt assembly</span></div><div class="s"><span lang="ko">지시문 + 청크 + 질문</span><span lang="en">instruction + chunks + question</span></div></div>
+      <div class="a">→</div>
+      <div class="n llm"><div class="t">LLM</div><div class="s">Qwen3-0.6B</div></div>
+      <div class="a">→</div>
+      <div class="n"><div class="t"><span lang="ko">답변 + 전거</span><span lang="en">Answer + sources</span></div><div class="s"><span lang="ko">본문 + 출처 3줄</span><span lang="en">text + three source lines</span></div></div>
+    </div>
+    <div class="controls">
+      <button class="btn" id="flowBtn"><span class="ic">▶</span><span id="flowBtnLbl"></span></button>
+      <span class="lbl" id="flowInfo"></span>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">③ <span lang="ko">조립</span><span lang="en">Assembly</span></div>
+    <h2><span lang="ko">LLM에게 실제로 건네지는 것</span><span lang="en">What the Model Actually Receives</span></h2>
+    <p><span lang="ko">아래가 모델이 받는 텍스트 <b>전부</b>다. 가공하지 않았다. 「조립하기」를 누르면 어떤 순서로 쌓이는지 보인다.</span><span lang="en">Below is <b>everything</b> the model receives, unedited. Press “Assemble” to watch the order in which it stacks up.</span></p>
+
+    <div class="ktab" id="ktab" style="margin:20px 0 0"></div>
+    <div class="cap"><span lang="ko">가져올 청크 개수(<code>k</code>)를 바꾸면 프롬프트가 얼마나 길어지는지 보인다</span><span lang="en">Change <code>k</code> — the number of chunks retrieved — to see how the prompt grows</span></div>
+
+    <div class="prompt">
+      <div class="h">
+        <span>prompt</span><span>→ Qwen3-0.6B</span>
+        <span class="sz" id="psize">—</span>
+      </div>
+      <div class="body" id="pbody"></div>
+    </div>
+    <div class="controls">
+      <button class="btn" id="asmBtn"><span class="ic">▶</span><span id="asmBtnLbl"></span></button>
+      <button class="btn" id="allBtn"><span id="allBtnLbl"></span></button>
+      <span class="lbl" id="asmInfo"></span>
+    </div>
+
+    <div class="contrast">
+      <div class="box good">
+        <div class="tag"><span lang="ko">지시문</span><span lang="en">Instruction</span></div>
+        <h4><span lang="ko">“여기 있는 자료만 쓰라”</span><span lang="en">“Use only these sources”</span></h4>
+        <p><span lang="ko">모델의 기억이 아니라 <b>준 자료 안에서만</b> 답하도록 못 박는다. 찾을 수 없으면 없다고 말하라는 지시도 함께 넣는다.</span><span lang="en">It pins the model to <b>the supplied material</b> rather than its own memory, and tells it to say so when the answer is not there.</span></p>
+      </div>
+      <div class="box good">
+        <div class="tag"><span lang="ko">청크</span><span lang="en">Chunks</span></div>
+        <h4><span lang="ko">답변의 재료 전부</span><span lang="en">All the raw material there is</span></h4>
+        <p><span lang="ko">모델이 볼 수 있는 것은 <b>이것뿐</b>이다. 여기 없는 내용이 답변에 나오면 그건 모델이 지어낸 것이다.</span><span lang="en">This is <b>all</b> the model can see. If something appears in the answer that is not here, the model invented it.</span></p>
+      </div>
+    </div>
+
+    <div class="summary gold"><span lang="ko">RAG의 “증강(Augmented)”이 바로 이 조립이다. <b>모델을 고치는 것이 아니라, 모델이 읽을 것을 바꾸는 것</b>이다.</span><span lang="en">This assembly <i>is</i> the “Augmented” in RAG. <b>You do not change the model — you change what the model reads.</b></span></div>
+  </section>
+
+  <section>
+    <div class="eyebrow teal">④ <span lang="ko">생성</span><span lang="en">Generation</span></div>
+    <h2><span lang="ko">그리고 모델이 답을 만든다</span><span lang="en">And Then the Model Writes</span></h2>
+    <p><span lang="ko">조립된 프롬프트가 LLM으로 들어가고, 모델은 그 텍스트를 읽어 이어질 말을 생성한다. <b>지시문 때문에 그 재료 안에서 답하게 된다.</b></span><span lang="en">The assembled prompt goes in, and the model generates what should come next. <b>The instruction is what keeps it inside the supplied material.</b></span></p>
+
+    <div class="blackbox">
+      <div class="big"><span lang="ko">여기서 생성된 답변은 이 자료에 싣지 않는다</span><span lang="en">The generated answer is not reproduced here</span></div>
+      <p><span lang="ko">모델의 출력은 <b>실습에서 각자 직접 확인</b>한다. 지어낸 답변을 실을 수는 없고, 같은 프롬프트라도 환경에 따라 결과가 달라질 수 있기 때문이다. <b>STEP 10을 실행하면 바로 이 프롬프트가 들어가고, 그 답이 화면에 찍힌다.</b></span><span lang="en">You will see the output <b>in the notebook, on your own machine</b>. We will not print an invented answer, and the same prompt can yield different text in different setups. <b>Run STEP 10 and this exact prompt goes in — the reply appears on your screen.</b></span></p>
+    </div>
+
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span><span class="fname">workshop_code.md</span><span class="cell">10-3</span></div>
+<pre>results = store.<span class="c-fn">similarity_search_with_score</span>(q, k=<span class="c-num">3</span>)
+context = <span class="c-str">"\n\n"</span>.<span class="c-fn">join</span>(doc.page_content <span class="c-kw">for</span> doc, _ <span class="c-kw">in</span> results)
+prompt  = (<span class="c-str">"Use only the following sources…"</span>
+           <span class="c-str">f"{context}\n\nQuestion: {q}"</span>)
+answer  = llm.<span class="c-fn">invoke</span>(prompt)      <span class="c-com"># ← <span lang="ko">여기서 생성된다</span><span lang="en">generated here</span></span></pre>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">⑤ <span lang="ko">전거</span><span lang="en">Provenance</span></div>
+    <h2><span lang="ko">답변 아래 붙는 세 줄</span><span lang="en">The Three Lines Beneath the Answer</span></h2>
+    <p><span lang="ko">답변만 내놓으면 확인할 방법이 없다. 그래서 <b>답을 만드는 데 쓴 청크의 출처</b>를 함께 출력한다. 이 세 줄은 새로 만든 것이 아니라, 검색 결과에 이미 붙어 있던 <code>metadata</code>를 그대로 옮긴 것이다.</span><span lang="en">An answer alone cannot be checked. So we print <b>the source of every chunk used</b> alongside it. These lines are not newly composed — they are the <code>metadata</code> that already rode along with each search result.</span></p>
+
+    <div id="sources"></div>
+
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span><span class="fname">workshop_code.md</span><span class="cell">10-3</span></div>
+<pre><span class="c-fn">print</span>(<span class="c-str">"\nSources"</span>)
+<span class="c-kw">for</span> doc, _ <span class="c-kw">in</span> results:
+    m = doc.metadata
+    <span class="c-fn">print</span>(<span class="c-str">f"  [{m['id']}] Goal {m['goal']} {m['goal_name']} · pp. {m['pages']}"</span>)</pre>
+    </div>
+
+    <div class="pull teal"><span lang="ko">답변은 모델이 만들지만,<br><span class="accent">출처는 우리가 설계한 것이다.</span></span><span lang="en">The model writes the answer.<br><span class="accent">The sources are ours by design.</span></span></div>
+
+    <p><span lang="ko">모델은 자기가 어느 문서를 읽었는지 말해 주지 않는다. 말해 줄 수 있는 것은 <b>우리가 어느 청크를 골라 넣었는지 알고 있기 때문</b>이다. STEP 3에서 구조를 세우고, STEP 4에서 메타데이터를 심고, STEP 6에서 원문과 함께 저장해 둔 그 모든 준비가 <b>이 세 줄을 위한 것</b>이었다.</span><span lang="en">The model cannot tell you which documents it read. We can — <b>because we chose which chunks to put in.</b> Building the structure in STEP 3, planting the metadata in STEP 4, storing text beside vectors in STEP 6: all of it was <b>for these three lines</b>.</span></p>
+  </section>
+
+  <section>
+    <div class="eyebrow teal">⑥ <span lang="ko">정리</span><span lang="en">In sum</span></div>
+    <h2><span lang="ko">파이프라인의 끝</span><span lang="en">The End of the Pipeline</span></h2>
+    <div class="summary teal"><span lang="ko">RAG는 모델을 바꾸지 않는다. <b>모델이 읽을 것을 바꾼다.</b> 그리고 무엇을 읽혔는지 기록해 두었다가, 답변과 함께 내놓는다.</span><span lang="en">RAG does not change the model. <b>It changes what the model reads</b> — and keeps a record of what that was, to hand over with the answer.</span></div>
+    <p><span lang="ko">여기까지가 열 단계다. PDF 한 편에서 시작해, 구조를 세우고, 조각으로 나누고, 좌표로 옮기고, 색인에 담고, 거리를 재어 찾고, 프롬프트로 조립해, 답변과 출처를 얻었다.</span><span lang="en">That is all ten steps. From one PDF: build the structure, cut it into chunks, move them into coordinates, file them in an index, measure distance to find them, assemble a prompt, and get back an answer with its sources.</span></p>
+  </section>
+
+  <div class="foot">
+  DH2026 Workshop · Build a Working RAG in Half a Day<br>
+  <span lang="ko">검색 결과와 프롬프트는 <code>Source/sdg_embeddings.jsonl</code>과 <code>workshop_code.md</code>의 실제 템플릿으로 조립한 것입니다 · <b>모델이 생성한 답변은 싣지 않았습니다</b></span><span lang="en">Results and prompt were assembled from the real <code>Source/sdg_embeddings.jsonl</code> and the actual template in <code>workshop_code.md</code> · <b>No model-generated answer is reproduced</b></span><br>
+  <a href="../index.html#step10">← <span lang="ko">발표자료로 돌아가기</span><span lang="en">Back to the slides</span></a>
+   · <a href="step02_chunk.html">STEP 2</a> · <a href="step03_xml.html">STEP 3</a> · <a href="step04_metadata.html">STEP 4</a> · <a href="step05_vector.html">STEP 5</a> · <a href="step06_vectordb.html">STEP 6</a> · <a href="step08_distance.html">STEP 7–8</a>
+</div>
+</div>
+
+<script>
+const D = {"query": "How many people still live in extreme poverty?", "instr": "Use only the following sources to answer the question. If the answer is not in the sources, say you cannot find it.", "hits": [{"rank": 1, "d": 0.7861, "id": "G01-S01", "goal": 1, "goalName": "No poverty", "pages": "10-11", "part": "1/2", "heading": "Revised poverty estimates show more people in extreme poverty, putting the 2030 goal further out of reach", "text": "Revised poverty estimates show more people in extreme poverty, putting the 2030 goal further out of reach\nThe World Bank revised global poverty estimates using updated price data and national poverty lines from over 160 countries in June 2025. The international poverty line was raised from $2.15 (2017 purchasing power parity (PPP)) to $3.00 (2021 PPP). Under the new threshold, 1.5 billion people escaped poverty between 1990 and 2022 – compared to 1.3 billion under the previous line. However, the update leads to an upward revision of extreme poverty. In 2025, an estimated 808 million people will be living in extreme poverty – up from the previous estimate of 677 million – representing 9.9 per cent of the world’s population, or 1 in 10 people. Eradicating extreme poverty by 2030 appears highly unlikely due to slow recovery from COVID-19 impacts, economic instability, climate shocks, and sluggish growth in sub-Saharan Africa. By 2025, more than three quarters of the global extreme poor will live in sub-Saharan Africa or in fragile and conflict-affected countries.", "tokens": 234, "words": 172}, {"rank": 2, "d": 0.8651, "id": "G01-S03", "goal": 1, "goalName": "No poverty", "pages": "10-11", "part": null, "heading": "Working poverty rate has decreased worldwide but persists in vulnerable regions", "text": "Working poverty rate has decreased worldwide but persists in vulnerable regions\nWorldwide, working poverty has significantly declined over the past 25 years, but recent trends in most regions suggest a slowdown in progress. In 2024, 6.9 per cent of the employed population – more than 240 million workers worldwide – lived on less than $2.15 in 2017 PPP per day, down from 8.4 per cent in 2015.\nEastern and South-Eastern Asia and Central and Southern Asia have made significant progress, reducing their shares of the working poor by half or more since 2015. However, working poverty rates remain persistently high in the world’s most vulnerable countries. In 2024, nearly 3 in 10 workers in the least developed countries (LDCs) and 2 in 10 in landlocked developing countries (LLDCs) lived in extreme poverty. In small island developing States (SIDS), the rate rose from 8.9 per cent in 2015 to 9.5 per cent in 2024.", "tokens": 203, "words": 153}, {"rank": 3, "d": 0.8978, "id": "G01-S02", "goal": 1, "goalName": "No poverty", "pages": "10-11", "part": "2/2", "heading": "Revised poverty estimates show more people in extreme poverty, putting the 2030 goal further out of reach", "text": "Revised poverty estimates show more people in extreme poverty, putting the 2030 goal further out of reach\nConcerning the Sustainable Development Goal (SDG) target of halving national poverty rates by 2030, all regions are projected to see a decline in average national poverty rates. However, only one in five countries are on track to achieve the target of halving its national poverty rate by 2030.", "tokens": 80, "words": 65}, {"rank": 4, "d": 0.9267, "id": "G11-S01", "goal": 11, "goalName": "Sustainable cities and communities", "pages": "32-33", "part": "1/2", "heading": "Housing affordability crisis affects up to 3 billion people worldwide", "text": "Housing affordability crisis affects up to 3 billion people worldwide\nHousing affordability has reached crisis levels amid rapid urbanization, impacting between 1.6 and 3 billion people worldwide. Alarmingly, 1.12 billion individuals live in slums or informal settlements, facing challenges such as overcrowding, homelessness and lack of basic services. Data from 124 countries show that, in 2023, the global average housing cost burden – the proportion of a household’s income on housing expenses such as rent or mortgage payments and utilities – stood at 31.0 per cent, with stark disparities across regions. Sub-Saharan Africa experienced the highest burden at 43.5 per cent, followed by Northern Africa and Western Asia at 36.9 per cent. Meanwhile, Europe and Northern America reported a lower burden, at 21.4 per cent, thanks to stronger regulatory frameworks and financial support systems.\nSolving the housing affordability crisis requires upgrading informal and public housing while enabling private markets to better serve low-income groups. Key enablers include accessible peri-urban land, strong transport", "tokens": 218, "words": 162}, {"rank": 5, "d": 0.9814, "id": "G02-S01", "goal": 2, "goalName": "Zero hunger", "pages": "12-13", "part": "1/2", "heading": "Global hunger and food insecurity have declined in recent years, but progress has been uneven", "text": "Global hunger and food insecurity have declined in recent years, but progress has been uneven\nGlobal hunger showed signs of improvement in 2024, with 8.2 per cent of the population undernourished – down from 8.5 per cent in 2023 and 8.7 per cent in 2022, though still above 2015 levels. An estimated 638–720 million people faced hunger. Progress was driven by improvements in South America, Southern Asia, and Southeastern Asia, while hunger continued to rise in Northern Africa and Western Asia and sub-Saharan Africa. In 2024, hunger affected 22.3 per cent of people in sub-Saharan Africa and 11.8 per cent in Northern Africa and Western Asia.", "tokens": 145, "words": 106}], "sizes": [{"k": 1, "chars": 1251, "tokens": 270}, {"k": 2, "chars": 2168, "tokens": 471}, {"k": 3, "chars": 2570, "tokens": 549}, {"k": 4, "chars": 3687, "tokens": 765}, {"k": 5, "chars": 4334, "tokens": 908}], "instrTok": 27, "queryTok": 11, "kmax": 5, "n": 176};
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ① 검색 결과 */
+function renderHits() {
+  document.getElementById('hits').innerHTML = D.hits.slice(0, 3).map(h =>
+    '<div class="hit"><div class="top">'
+    + '<span class="rk">#' + h.rank + '</span>'
+    + '<span class="dd">' + L('거리 ', 'distance ') + h.d.toFixed(4) + '</span>'
+    + '<span class="prov">' + h.id + ' · Goal ' + h.goal + ' ' + esc(h.goalName)
+    + ' · pp. ' + h.pages + (h.part ? ' · part ' + h.part : '') + '</span></div>'
+    + '<div class="hd">' + esc(h.heading) + '</div>'
+    + '<div class="bd">' + esc(h.text.split('\n').slice(1).join('\n')) + '</div>'
+    + '<span class="more">▾ ' + L('전문 보기', 'read in full') + ' ('
+    + h.words + L('단어', ' words') + ' · ' + h.tokens + L('토큰', ' tokens') + ')</span></div>').join('');
+  document.querySelectorAll('.hit .more').forEach(m => m.addEventListener('click', () => {
+    const bd = m.previousElementSibling;
+    const open = bd.classList.toggle('open');
+    m.textContent = open ? '▴ ' + L('접기', 'collapse') : '▾ ' + L('전문 보기', 'read in full');
+  }));
+}
+
+/* ② 흐름 */
+let flowTimers = [], flowOn = false;
+function flowNotes() {
+  return [L('거리순으로 3개를 골랐다', 'Picked the three nearest by distance'),
+          L('지시문 + 청크 3개 + 질문을 하나로 합친다', 'Instruction + three chunks + question, joined into one'),
+          L('모델이 그 텍스트를 읽고 이어질 말을 만든다', 'The model reads it and writes what follows'),
+          L('답변과 함께 출처 3줄을 내놓는다', 'It returns the answer with three source lines')];
+}
+function renderFlowLabels() {
+  document.getElementById('flowBtnLbl').textContent = L('따라가 보기', 'Walk through');
+  if (!flowOn) document.getElementById('flowInfo').textContent = L('네 단계를 거친다', 'Four steps');
+}
+(() => {
+  const box = document.getElementById('flow');
+  const items = Array.from(box.children);
+  document.getElementById('flowBtn').addEventListener('click', () => {
+    flowTimers.forEach(clearTimeout); flowTimers = [];
+    flowOn = !flowOn;
+    if (!flowOn) {
+      items.forEach(el => el.classList.remove('on'));
+      document.getElementById('flowInfo').textContent = L('네 단계를 거친다', 'Four steps');
+      return;
+    }
+    items.forEach(el => el.classList.remove('on'));
+    const notes = flowNotes();
+    let k = 0;
+    items.forEach((el, i) => flowTimers.push(setTimeout(() => {
+      el.classList.add('on');
+      if (el.classList.contains('n')) document.getElementById('flowInfo').textContent = notes[k++] || '';
+    }, 460 * i)));
+  });
+})();
+
+/* ③ 프롬프트 조립 */
+let k = 3, asmTimers = [];
+function buildPrompt() {
+  const body = document.getElementById('pbody');
+  const segs = ['<span class="seg instr"><span class="tag">① '
+    + L('지시문', 'Instruction') + ' · ' + D.instrTok + L('토큰', ' tokens') + '</span>'
+    + esc(D.instr) + '</span>'];
+  D.hits.slice(0, k).forEach((h, i) =>
+    segs.push('<span class="seg chunk"><span class="tag">② ' + L('청크 ', 'Chunk ') + (i + 1) + ' · '
+      + h.id + ' · Goal ' + h.goal + ' · pp. ' + h.pages + ' · ' + h.tokens + L('토큰', ' tokens')
+      + '</span>' + esc(h.text) + '</span>'));
+  segs.push('<span class="seg q"><span class="tag">③ ' + L('질문', 'Question') + ' · '
+    + D.queryTok + L('토큰', ' tokens') + '</span>Question: ' + esc(D.query) + '</span>');
+  body.innerHTML = segs.join('');
+  const s = D.sizes[k - 1];
+  document.getElementById('psize').textContent =
+    s.chars.toLocaleString() + L('자 · 약 ', ' chars · ~') + s.tokens.toLocaleString() + L('토큰', ' tokens');
+  body.querySelectorAll('.seg').forEach(el => el.classList.add('in'));
+}
+function renderAsmLabels() {
+  document.getElementById('asmBtnLbl').textContent = L('조립하기', 'Assemble');
+  document.getElementById('allBtnLbl').textContent = L('전부 보기', 'Show all');
+  document.getElementById('asmInfo').textContent =
+    L('지시문 → 청크 → 질문 순으로 쌓인다', 'Instruction → chunks → question');
+}
+(() => {
+  const ktab = document.getElementById('ktab');
+  D.sizes.forEach(s => {
+    const b = document.createElement('button');
+    b.textContent = 'k = ' + s.k;
+    b.className = s.k === 3 ? 'on' : '';
+    b.addEventListener('click', () => {
+      k = s.k;
+      ktab.querySelectorAll('button').forEach((x, i) => x.classList.toggle('on', i === s.k - 1));
+      buildPrompt();
+    });
+    ktab.appendChild(b);
+  });
+  document.getElementById('asmBtn').addEventListener('click', () => {
+    asmTimers.forEach(clearTimeout); asmTimers = [];
+    const segs = document.querySelectorAll('#pbody .seg');
+    segs.forEach(el => el.classList.remove('in'));
+    const notes = [L('① 먼저 지시문 — “여기 있는 자료만 쓰라”', '① The instruction first — “use only these sources”'),
+                   L('② 검색해 온 청크를 차례로 붙인다', '② Then the retrieved chunks, one by one'),
+                   L('③ 마지막에 질문을 붙인다 — 이제 완성', '③ The question last — now it is complete')];
+    segs.forEach((el, i) => asmTimers.push(setTimeout(() => {
+      el.classList.add('in');
+      document.getElementById('asmInfo').textContent =
+        i === 0 ? notes[0] : (i === segs.length - 1 ? notes[2] : notes[1]);
+      el.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+    }, 520 * i)));
+  });
+  document.getElementById('allBtn').addEventListener('click', () => {
+    asmTimers.forEach(clearTimeout);
+    document.querySelectorAll('#pbody .seg').forEach(el => el.classList.add('in'));
+    document.getElementById('asmInfo').textContent =
+      L('전체 프롬프트 — 모델이 받는 텍스트 전부', 'The whole prompt — everything the model receives');
+  });
+})();
+
+/* ⑤ 출처 */
+function renderSources() {
+  document.getElementById('sources').innerHTML = D.hits.slice(0, 3).map(h =>
+    '<div class="srcline"><span class="id">[' + h.id + ']</span>'
+    + '<span class="pv">Goal ' + h.goal + ' ' + esc(h.goalName) + ' · pp. ' + h.pages
+    + (h.part ? ' · part ' + h.part : '') + '</span></div>').join('');
+}
+
+function renderAll() { renderHits(); renderFlowLabels(); renderAsmLabels(); buildPrompt(); renderSources(); }
+renderAll();
+onLangChange(renderAll);
+</script>
+</body>
+</html>

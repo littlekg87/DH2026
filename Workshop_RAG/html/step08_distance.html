@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>거리로 찾는다 · Finding by Distance — DH2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<script src="ui.js"></script>
+<style>
+  .formula{font-family:var(--mono);text-align:center;padding:22px 18px;margin:22px 0 0;
+    border:1px solid var(--line);border-radius:10px;background:var(--ink-3);
+    font-size:1.16rem;color:var(--paper);overflow-x:auto}
+  .formula .op{color:var(--paper-faint)}
+  .formula .hl{color:var(--gold)}
+  .formula .big{font-size:1.5rem;vertical-align:-3px}
+
+  .line1{position:relative;height:76px;margin:22px 0 0;border:1px solid var(--line);
+    border-radius:10px;background:var(--ink-3)}
+  .line1 .ax{position:absolute;left:5%;right:5%;top:44px;height:1px;background:var(--line-soft)}
+  .line1 .tick{position:absolute;top:38px;width:1px;height:8px;background:var(--line-soft)}
+  .line1 .tl2{position:absolute;top:52px;transform:translateX(-50%);font-family:var(--mono);
+    font-size:.78rem;color:var(--paper-faint)}
+  .line1 .dot{position:absolute;top:44px;width:15px;height:15px;border-radius:50%;
+    transform:translate(-50%,-50%);cursor:grab;border:2px solid var(--ink)}
+  .line1 .dot.a{background:var(--teal-soft)} .line1 .dot.b{background:var(--cinnabar-soft)}
+  .line1 .span{position:absolute;top:26px;height:12px;border-left:1px solid var(--gold);
+    border-right:1px solid var(--gold);border-top:1px solid var(--gold)}
+  .line1 .spanl{position:absolute;top:6px;transform:translateX(-50%);font-family:var(--mono);
+    font-size:.86rem;color:var(--gold)}
+
+  .plane{position:relative;width:100%;aspect-ratio:3/2;border:1px solid var(--line);
+    border-radius:10px;background:var(--ink-3);margin:22px 0 0;overflow:hidden;touch-action:none}
+  .plane svg{position:absolute;inset:0;width:100%;height:100%}
+  .plane .pt{position:absolute;width:17px;height:17px;border-radius:50%;transform:translate(-50%,-50%);
+    cursor:grab;border:2px solid var(--ink);z-index:5}
+  .plane .pt.a{background:var(--teal-soft)} .plane .pt.b{background:var(--cinnabar-soft)}
+
+  .terms{width:100%;border-collapse:collapse;margin:20px 0 0;font-family:var(--mono);font-size:.86rem}
+  .terms th{padding:9px 10px;border-bottom:1px solid var(--line-soft);color:var(--paper-faint);
+    font-weight:400;font-size:.82rem;text-align:right}
+  .terms td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;color:var(--paper-dim)}
+  .terms td:first-child,.terms th:first-child{text-align:left;color:var(--paper-faint)}
+  .terms tr.now td{background:rgba(201,168,106,.16);color:var(--paper)}
+  .terms tr.now td.s{color:var(--gold)}
+  .terms td.s{color:var(--teal-soft)}
+  .terms tr.sumrow td{border-top:2px solid var(--line-soft);color:var(--gold);font-size:.98rem;padding-top:12px}
+
+  .prog{height:8px;border-radius:4px;background:var(--ink-3);border:1px solid var(--line);
+    overflow:hidden;margin:16px 0 0}
+  .prog .f{height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));width:0;transition:width .25s ease}
+
+  .bars{display:flex;align-items:flex-end;gap:1px;height:96px;margin:18px 0 0;
+    border-bottom:1px solid var(--line);overflow-x:auto}
+  .bars .b{flex:0 0 3px;background:rgba(74,157,142,.55);min-height:1px}
+  .bars .b.big{background:var(--cinnabar)}
+
+  .rank{width:100%;border-collapse:collapse;margin:20px 0 0}
+  .rank th{padding:10px;border-bottom:1px solid var(--line-soft);color:var(--paper-faint);
+    font-family:var(--mono);font-size:.82rem;font-weight:400;text-align:left}
+  .rank td{padding:10px;border-bottom:1px solid var(--line);font-size:.94rem;color:var(--paper-dim)}
+  .rank td.n{font-family:var(--mono);color:var(--paper-faint);width:44px}
+  .rank td.d{font-family:var(--mono);color:var(--teal-soft);width:84px}
+  .rank td.i{font-family:var(--mono);color:var(--gold);width:96px}
+  .rank tr.top3 td{background:rgba(74,157,142,.1)}
+  .rank tr.top3 td.d{font-weight:700}
+  .rank .bar{display:block;height:4px;border-radius:2px;background:var(--cinnabar);margin-top:5px;opacity:.5}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="step">STEP 7–8</span>
+  <span class="brand"><span lang="ko">거리로 찾는다</span><span lang="en">Finding by Distance</span></span>
+  <a class="back" href="../index.html#step8">← <span lang="ko">발표자료</span><span lang="en">Slides</span></a>
+</div>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="kicker">DH2026 Workshop · <span lang="ko">보조자료</span><span lang="en">Supplement</span></div>
+    <h1><span lang="ko">검색은 거리를 재는 일이다</span><span lang="en">Search Is Measuring Distance</span></h1>
+    <div class="sub"><span lang="ko">RAG의 검색에는 마법이 없다. <b>질문을 좌표로 바꾸고, 자료의 좌표들과 거리를 재고, 가까운 순으로 줄 세운다.</b> 그게 전부다. 여기서는 그 거리 계산을 <b>1차원부터</b> 차근차근 쌓아 올려, 384차원에서도 똑같은 산수라는 것을 실제 숫자로 확인한다.</span><span lang="en">There is no magic in RAG retrieval. <b>Turn the question into a coordinate, measure its distance to every coordinate in the corpus, and sort.</b> That is all of it. Here we build that calculation up <b>from one dimension</b>, and confirm with real numbers that it is the same arithmetic at 384.</span></div>
+  </div>
+
+  <section>
+    <div class="eyebrow teal">① <span lang="ko">STEP 7 · 질문도 좌표가 된다</span><span lang="en">STEP 7 · The question becomes a coordinate</span></div>
+    <h2><span lang="ko">같은 자로 재야 비교할 수 있다</span><span lang="en">You Must Measure With the Same Ruler</span></h2>
+    <p><span lang="ko">자료를 임베딩한 <b>바로 그 인코더</b>로 질문도 임베딩한다. 다른 자로 잰 길이를 비교할 수 없듯, 같은 모델을 써야 거리가 의미를 갖는다.</span><span lang="en">The question goes through <b>the very encoder</b> that embedded the corpus. You cannot compare lengths measured with different rulers; only the same model makes the distance mean anything.</span></p>
+
+    <div class="chunkbox">
+      <div class="head"><span class="cid"><span lang="ko">질문</span><span lang="en">Question</span></span>
+        <span class="meta">384<span lang="ko">차원 · 메타데이터 없음</span><span lang="en"> dims · no metadata</span></span></div>
+      <div class="body">How many people still live in extreme poverty?</div>
+    </div>
+
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span><span class="fname">workshop_code.md</span><span class="cell">7-1</span></div>
+<pre>qv = embeddings.<span class="c-fn">embed_query</span>(query)   <span class="c-com"># <span lang="ko">청크와 같은 인코더</span><span lang="en">same encoder as the chunks</span></span></pre>
+    </div>
+
+    <div style="font-family:var(--mono);font-size:.86rem;color:var(--teal-soft);
+      padding:14px 17px;border:1px solid var(--line);border-radius:9px;background:var(--ink-3);margin-top:6px">
+      [+0.0672, -0.0524, -0.0036, +0.0941, -0.0382, -0.0046, -0.0592, +0.0583, … ]
+      <span style="color:var(--paper-faint)"> — <span lang="ko">총 384개 · 길이 1.0</span><span lang="en">384 numbers · length 1.0</span></span>
+    </div>
+
+    <div class="contrast">
+      <div class="box good">
+        <div class="tag"><span lang="ko">청크와 같은 점</span><span lang="en">Same as a chunk</span></div>
+        <h4><span lang="ko">같은 인코더 · 같은 384차원</span><span lang="en">Same encoder, same 384 dimensions</span></h4>
+        <p><span lang="ko">같은 좌표계 위에 놓인다. 그래야 사이의 거리를 잴 수 있다.</span><span lang="en">It lands in the same coordinate system — which is what makes distance measurable.</span></p>
+      </div>
+      <div class="box bad">
+        <div class="tag"><span lang="ko">다른 점</span><span lang="en">Different</span></div>
+        <h4><span lang="ko">메타데이터가 없다</span><span lang="en">No metadata</span></h4>
+        <p><span lang="ko">질문에는 Goal도 쪽수도 없다. <b>전거는 찾아낸 쪽에만 있다.</b></span><span lang="en">A question has no Goal, no page range. <b>Provenance belongs to what is found.</b></span></p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">② <span lang="ko">거리 · 1차원</span><span lang="en">Distance · one dimension</span></div>
+    <h2><span lang="ko">거리는 “빼기”에서 시작한다</span><span lang="en">Distance Begins With Subtraction</span></h2>
+    <p><span lang="ko">수직선 위의 두 점 사이 거리는 <b>빼면 끝</b>이다. 3과 7의 거리는 4. 점을 끌어서 움직여 보라.</span><span lang="en">On a number line, the distance between two points is <b>just a subtraction</b>. From 3 to 7 is 4. Drag the dots.</span></p>
+
+    <div class="line1" id="line1">
+      <div class="ax"></div><div class="span" id="l1span"></div><div class="spanl" id="l1lab"></div>
+      <div class="dot a" id="l1a"></div><div class="dot b" id="l1b"></div>
+    </div>
+    <div class="formula" id="f1"></div>
+    <div class="cap"><span lang="ko">빼면 음수가 나올 수 있다. 거리는 <span class="cin">음수일 수 없으므로</span> 부호를 없애야 한다 — 그래서 <b>제곱</b>한다.</span><span lang="en">Subtraction can go negative. A distance <span class="cin">cannot be negative</span>, so the sign has to go — which is why we <b>square</b> it.</span></div>
+  </section>
+
+  <section>
+    <div class="eyebrow">③ <span lang="ko">거리 · 2차원</span><span lang="en">Distance · two dimensions</span></div>
+    <h2><span lang="ko">축이 둘이면 — 피타고라스</span><span lang="en">Two Axes — Pythagoras</span></h2>
+    <p><span lang="ko">가로로 3, 세로로 4 떨어져 있으면 직선 거리는 5다. 중학교에서 배운 그것이다. <b>가로차와 세로차를 각각 제곱해 더하고, 제곱근을 취한다.</b> 두 점을 끌어 움직여 보라.</span><span lang="en">Three across and four up gives five as the crow flies — the theorem everyone met at school. <b>Square each difference, add them, take the square root.</b> Drag the two points.</span></p>
+
+    <div class="plane" id="plane">
+      <svg id="psvg"></svg><div class="pt a" id="pa"></div><div class="pt b" id="pb"></div>
+    </div>
+    <div class="formula" id="f2"></div>
+    <div class="cap" id="cap2"></div>
+
+    <div class="summary teal"><span lang="ko">여기까지가 전부다. <b>축이 몇 개든 방법은 같다</b> — 축마다 차이를 구해 제곱하고, 전부 더하고, 제곱근을 취한다.</span><span lang="en">That is the whole method. <b>However many axes there are, it does not change</b> — take each difference, square it, sum them all, take the root.</span></div>
+  </section>
+
+  <section>
+    <div class="eyebrow">④ <span lang="ko">거리 · 384차원</span><span lang="en">Distance · 384 dimensions</span></div>
+    <h2><span lang="ko">축이 384개여도 똑같다</span><span lang="en">It Is the Same With 384 Axes</span></h2>
+    <p><span lang="ko">그림은 못 그린다. 하지만 <b>계산은 조금도 달라지지 않는다.</b> 항이 2개에서 384개로 늘어날 뿐이다.</span><span lang="en">You cannot draw it. But <b>the calculation does not change at all</b> — there are simply 384 terms instead of two.</span></p>
+
+    <div class="formula">
+      d <span class="op">=</span> <span class="big">√</span><span class="op">(</span>
+      (a<sub>0</sub><span class="op">−</span>b<sub>0</sub>)² <span class="op">+</span>
+      (a<sub>1</sub><span class="op">−</span>b<sub>1</sub>)² <span class="op">+</span>
+      <span class="op">…</span> <span class="op">+</span>
+      (a<sub><span class="hl">383</span></sub><span class="op">−</span>b<sub><span class="hl">383</span></sub>)²
+      <span class="op">)</span>
+    </div>
+
+    <p style="margin-top:26px"><span lang="ko">실제로 해 보자. 질문 벡터와 <b>1등으로 뽑힌 청크</b> <code>G01-S01</code>의 거리를 <b>한 항씩</b> 계산한다.</span><span lang="en">Let us actually do it — the distance between the query and <code>G01-S01</code>, <b>the nearest chunk</b>, computed <b>one term at a time</b>.</span></p>
+
+    <div class="controls">
+      <button class="btn" id="stepBtn"><span class="ic">▸</span><span id="stepBtnL"></span></button>
+      <button class="btn" id="fastBtn"><span class="ic">▶</span><span id="fastBtnL"></span></button>
+      <button class="btn" id="resetBtn"><span class="ic">↺</span><span id="resetBtnL"></span></button>
+      <span class="lbl" id="stepLbl">0 / 384</span>
+    </div>
+    <div class="prog"><div class="f" id="prog"></div></div>
+
+    <table class="terms" id="terms"></table>
+
+    <div class="bars" id="bars"></div>
+    <div class="cap" id="capBars"></div>
+
+    <div class="summary gold" id="finalNote" style="display:none"></div>
+  </section>
+
+  <section>
+    <div class="eyebrow teal">⑤ <span lang="ko">이유</span><span lang="en">Why</span></div>
+    <h2><span lang="ko">왜 제곱하고, 왜 제곱근인가</span><span lang="en">Why Square, and Why Take the Root</span></h2>
+
+    <div class="contrast">
+      <div class="box good">
+        <div class="tag"><span lang="ko">제곱하는 이유</span><span lang="en">Why square</span></div>
+        <h4><span lang="ko">부호를 없애기 위해</span><span lang="en">To get rid of the sign</span></h4>
+        <p><span lang="ko">차이는 음수일 수 있다. −0.14와 +0.14는 <b>벌어진 정도가 같다.</b> 제곱하면 둘 다 0.0196이 되어 부호가 사라진다. 덤으로 <b>큰 차이가 더 크게 반영</b>된다 — 조금 다른 것보다 많이 다른 것에 민감해진다.</span><span lang="en">A difference can be negative, yet −0.14 and +0.14 are <b>equally far apart</b>. Squaring makes both 0.0196 and the sign disappears. As a bonus, <b>large gaps count for more</b> — the measure grows sensitive to the dimensions where the two really differ.</span></p>
+      </div>
+      <div class="box good">
+        <div class="tag"><span lang="ko">제곱근을 취하는 이유</span><span lang="en">Why the root</span></div>
+        <h4><span lang="ko">원래 단위로 되돌리려고</span><span lang="en">To return to the original unit</span></h4>
+        <p><span lang="ko">제곱해서 더한 값은 <b>넓이 같은 단위</b>가 되어 버린다. 제곱근을 취해야 다시 <b>길이</b>가 된다. 넓이 5인 정사각형의 한 변이 √5인 것과 같다.</span><span lang="en">Once squared and summed, the number is in something like <b>units of area</b>. The square root brings it back to a <b>length</b> — just as a square of area 5 has sides of √5.</span></p>
+      </div>
+    </div>
+
+    <div class="analogy">
+      <div class="seal"><svg viewBox="0 0 24 24"><path d="M4 20L20 4M4 20h16M4 20V4"/></svg></div>
+      <div>
+        <span class="term"><span lang="ko">L2 거리 · 유클리드 거리</span><span lang="en">L2 distance · Euclidean distance</span></span>
+        <p><span lang="ko">이 방식을 <b>L2 거리</b> 또는 <b>유클리드 거리</b>라 부른다. 자로 재는 그 거리, 우리가 평소에 “거리”라고 부르는 바로 그것이다. 이름이 어려워 보일 뿐 <b>새로운 개념이 아니다.</b></span><span lang="en">This is called <b>L2 distance</b>, or <b>Euclidean distance</b> — the distance you get with a ruler, the one everybody already means by “distance”. The name is forbidding; <b>the idea is not new.</b></span></p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">⑥ <span lang="ko">정렬</span><span lang="en">Sorting</span></div>
+    <h2><span lang="ko">176개 전부와 재고, 줄 세운다</span><span lang="en">Measure Against All 176, Then Sort</span></h2>
+    <p><span lang="ko">방금 한 계산을 <b>176번</b> 반복하면 검색이 끝난다. 가까운 순으로 정렬해 위에서 몇 개를 가져오면 그것이 검색 결과다.</span><span lang="en">Repeat what we just did <b>176 times</b> and the search is done. Sort by distance, take the top few — that is the result.</span></p>
+
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span><span class="fname">workshop_code.md</span><span class="cell">8-1</span></div>
+<pre>distances = []
+<span class="c-kw">for</span> v <span class="c-kw">in</span> V:                          <span class="c-com"># <span lang="ko">청크 176개</span><span lang="en">176 chunks</span></span>
+    diff = v - Q                       <span class="c-com"># <span lang="ko">384개의 차이</span><span lang="en">384 differences</span></span>
+    dist = np.<span class="c-fn">sqrt</span>((diff ** <span class="c-num">2</span>).<span class="c-fn">sum</span>())  <span class="c-com"># <span lang="ko">제곱 → 합 → 제곱근</span><span lang="en">square → sum → root</span></span>
+    distances.<span class="c-fn">append</span>(dist)
+
+order = np.<span class="c-fn">argsort</span>(distances)          <span class="c-com"># <span lang="ko">가까운 순으로</span><span lang="en">nearest first</span></span></pre>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="k"><span lang="ko">가장 가까움</span><span lang="en">Nearest</span></div>
+        <div class="v tl">0.7861</div><div class="d">G01-S01</div></div>
+      <div class="stat"><div class="k"><span lang="ko">중앙값</span><span lang="en">Median</span></div>
+        <div class="v">1.2086</div><div class="d"><span lang="ko">대부분 이 언저리</span><span lang="en">where most of them sit</span></div></div>
+      <div class="stat"><div class="k"><span lang="ko">가장 멂</span><span lang="en">Farthest</span></div>
+        <div class="v cin">1.4104</div><div class="d"><span lang="ko">주제가 전혀 다르다</span><span lang="en">an entirely different topic</span></div></div>
+    </div>
+
+    <div class="controls">
+      <span class="lbl" id="showLbl"></span>
+      <button class="btn on" id="bTop"></button>
+      <button class="btn" id="bAll"></button>
+    </div>
+    <table class="rank" id="rank"></table>
+
+    <div class="summary teal"><span lang="ko">1등 <b>0.7861</b>과 꼴찌 <b>1.4104</b>의 차이는 크지 않아 보인다. 정규화된 벡터의 거리는 <b>0에서 2 사이</b>에 놓이기 때문이다 — 중요한 것은 절댓값이 아니라 <b>순서</b>다.</span><span lang="en">The gap between first (<b>0.7861</b>) and last (<b>1.4104</b>) looks small. That is because distances between normalised vectors always fall <b>between 0 and 2</b> — what matters is not the absolute value but <b>the ordering</b>.</span></div>
+  </section>
+
+  <section>
+    <div class="eyebrow teal">⑦ <span lang="ko">정리</span><span lang="en">In sum</span></div>
+    <h2><span lang="ko">FAISS가 하는 일이 이것이다</span><span lang="en">This Is What FAISS Does</span></h2>
+    <p><span lang="ko">STEP 6에서 만든 <code>IndexFlatL2</code>가 하는 계산이 방금 우리가 손으로 한 것과 <b>완전히 같다.</b> 이름의 <b>L2</b>가 바로 이 거리다. STEP 9에서 두 결과가 일치하는지 직접 확인한다.</span><span lang="en">The <code>IndexFlatL2</code> we built in STEP 6 performs <b>exactly</b> the calculation we just did by hand. The <b>L2</b> in its name is this distance. In STEP 9 we check that the two agree.</span></p>
+
+    <div class="pull teal"><span lang="ko">검색은 마법이 아니다.<br><span class="accent">빼고, 제곱하고, 더하고, 제곱근을 취한 뒤, 줄 세우는 일</span>이다.</span><span lang="en">Retrieval is not magic.<br><span class="accent">Subtract, square, sum, take the root, and sort.</span></span></div>
+
+    <div class="summary teal"><span lang="ko">다음은 <b>STEP 9</b> — 손계산과 FAISS를 대조하고, 찾아낸 결과에 <b>전거</b>를 붙인다.</span><span lang="en">Next is <b>STEP 9</b> — compare the hand calculation with FAISS, and attach <b>provenance</b> to what was found.</span></div>
+  </section>
+
+  <div class="foot">
+  DH2026 Workshop · Build a Working RAG in Half a Day<br>
+  <span lang="ko">질의 벡터는 <code>sentence-transformers/all-MiniLM-L6-v2</code>로 실제 임베딩 · 청크 벡터는 <code>Source/sdg_embeddings.jsonl</code>의 실제 값</span><span lang="en">The query was embedded with the real <code>sentence-transformers/all-MiniLM-L6-v2</code> · Chunk vectors are the actual values in <code>Source/sdg_embeddings.jsonl</code></span><br>
+  <a href="../index.html#step8">← <span lang="ko">발표자료로 돌아가기</span><span lang="en">Back to the slides</span></a>
+   · <a href="step06_vectordb.html">STEP 6</a> · <a href="step10_answer.html">STEP 9–10</a>
+</div>
+</div>
+
+<script>
+const D = {"query": "How many people still live in extreme poverty?", "dim": 384, "n": 176, "qvec": [0.0672, -0.0524, -0.0036, 0.0941, -0.0382, -0.0046, -0.0592, 0.0583, -0.0708, 0.0126, 0.0826, 0.0238, 0.0725, -0.0244, -0.029, -0.0112, -0.0177, -0.0707, 0.0176, -0.0067, -0.0369, -0.0253, -0.0095, -0.0415, 0.0791, -0.0256, -0.0102, -0.0136, 0.0237, 0.0313, 0.0102, 0.0182, 0.0472, 0.0451, 0.0647, 0.0185, 0.096, -0.0042, -0.0433, -0.0195, 0.0609, -0.0477, -0.0625, -0.0937, 0.0471, -0.0426, -0.0083, -0.0132, -0.0101, -0.0237, 0.0252, 0.0718, 0.0206, 0.0071, 0.0538, -0.0448, 0.0122, -0.0138, 0.0222, 0.0186, 0.0571, 0.0408, -0.0162, 0.0035, 0.109, 0.0557, 0.0104, 0.0011, -0.0282, 0.0535, -0.0376, -0.0189, 0.0037, 0.0195, 0.0071, -0.0857, 0.0056, 0.0237, -0.0458, 0.0031, 0.0729, -0.0259, -0.0425, -0.0064, 0.0009, 0.0556, 0.006, 0.0095, 0.0563, -0.0581, -0.0222, 0.0753, 0.0384, 0.0679, -0.0222, 0.0309, -0.0152, -0.0603, -0.1122, 0.0271, -0.1406, -0.0457, 0.1318, -0.0727, -0.0092, -0.0386, -0.0194, 0.0321, -0.0713, 0.0286, -0.046, 0.0209, -0.0151, 0.0215, 0.0065, -0.1591, 0.0552, -0.0117, -0.0163, 0.065, 0.0233, 0.0769, -0.0673, 0.0757, 0.0154, 0.052, -0.0696, -0.0, 0.093, -0.1148, 0.037, 0.0352, -0.0797, -0.0291, -0.0207, 0.0197, -0.0024, 0.0385, 0.0993, -0.1092, 0.0216, 0.0614, 0.0762, -0.0165, -0.0416, -0.0497, -0.0569, 0.0329, -0.0326, 0.0715, 0.004, 0.0125, -0.0103, 0.0372, 0.0532, -0.0318, 0.051, -0.0053, 0.0351, -0.0039, -0.0205, -0.0799, -0.0088, 0.0429, -0.0025, 0.0464, -0.0264, -0.0156, -0.0773, -0.0069, 0.1026, -0.0402, 0.0551, 0.0264, 0.1033, -0.0269, -0.0674, 0.0279, -0.0516, 0.0196, -0.1173, -0.0105, 0.0027, -0.0778, -0.0524, -0.0298, -0.0089, 0.0073, -0.0433, -0.0664, -0.0124, -0.0167, 0.0875, 0.0846, -0.0161, 0.0187, -0.0562, 0.0768, 0.0292, -0.017, -0.0277, 0.0027, -0.023, 0.0438, 0.0483, 0.0076, 0.0188, 0.0047, 0.0157, 0.0194, 0.0416, 0.0179, 0.0881, 0.1207, -0.0416, -0.0047, 0.0612, -0.0873, 0.0068, -0.054, -0.0021, -0.0399, -0.0699, -0.0, -0.0546, 0.0475, 0.0167, 0.0091, 0.0212, -0.046, 0.0691, 0.0337, 0.0115, 0.0899, -0.0128, -0.0066, 0.1432, 0.0484, -0.0236, -0.0111, 0.0039, -0.017, 0.0633, -0.0802, -0.0385, 0.0692, -0.0343, 0.1102, -0.0125, 0.0239, -0.0721, 0.0688, -0.088, -0.1105, 0.0348, 0.042, -0.0519, -0.0774, -0.035, -0.0095, -0.0287, 0.0231, -0.0349, -0.0524, 0.0317, -0.0222, -0.0691, 0.0188, 0.0207, 0.0615, 0.0425, -0.0887, 0.0059, -0.0521, 0.0081, -0.007, 0.0229, 0.0668, 0.0486, -0.0528, 0.0209, -0.0445, -0.0371, -0.0436, -0.0074, 0.0613, -0.0195, 0.0901, 0.0526, -0.0311, -0.0411, -0.0353, -0.0878, -0.0631, 0.1348, -0.1002, -0.031, -0.0678, -0.0466, 0.0128, -0.0415, 0.0878, 0.0171, -0.0018, 0.0178, -0.0712, 0.0356, -0.0567, -0.035, 0.0011, 0.0108, -0.038, -0.0157, 0.0901, -0.1108, -0.0043, 0.0018, -0.0665, 0.0194, -0.0, 0.0908, 0.1333, -0.0167, -0.0636, 0.0399, 0.0215, 0.0563, 0.1066, 0.0689, 0.1069, -0.03, -0.0048, 0.0331, -0.0182, -0.0113, 0.0194, 0.015, -0.0138, -0.0129, -0.0029, 0.0713, 0.0366, -0.0004, -0.0281, 0.0198, -0.0062, 0.003, 0.0182, -0.0209, -0.0248, 0.0162, -0.1, -0.0332, -0.0453, -0.0188, 0.0311, -0.0206, -0.0031, 0.0138, -0.0334, -0.0258, -0.0281, 0.0179, 0.0403, 0.0147, -0.0103, -0.1027, -0.0064, 0.0158, -0.0918, -0.0559, 0.0331, -0.0039, -0.0209, 0.0087, -0.0921, 0.0398, 0.0101, -0.0512, -0.0629, 0.0663, -0.0827, -0.0374, 0.0296], "qnorm": 1.0, "top": {"id": "G01-S01", "head": "Revised poverty estimates show more people in extreme poverty, putting the 2030 goal further out of reach", "terms": [{"k": 0, "c": -0.0698, "q": 0.0672, "d": -0.1371, "s": 0.018786}, {"k": 1, "c": -0.0433, "q": -0.0524, "d": 0.0091, "s": 8.2e-05}, {"k": 2, "c": 0.0213, "q": -0.0036, "d": 0.0249, "s": 0.00062}, {"k": 3, "c": 0.0764, "q": 0.0941, "d": -0.0177, "s": 0.000313}, {"k": 4, "c": 0.0087, "q": -0.0382, "d": 0.0469, "s": 0.002204}, {"k": 5, "c": -0.0009, "q": -0.0046, "d": 0.0037, "s": 1.3e-05}, {"k": 6, "c": -0.1072, "q": -0.0592, "d": -0.048, "s": 0.002303}, {"k": 7, "c": 0.057, "q": 0.0583, "d": -0.0013, "s": 2e-06}, {"k": 8, "c": -0.0717, "q": -0.0708, "d": -0.0009, "s": 1e-06}, {"k": 9, "c": 0.0446, "q": 0.0126, "d": 0.032, "s": 0.001025}, {"k": 10, "c": 0.0207, "q": 0.0826, "d": -0.062, "s": 0.003838}, {"k": 11, "c": -0.0053, "q": 0.0238, "d": -0.0291, "s": 0.000848}, {"k": 12, "c": 0.0122, "q": 0.0725, "d": -0.0602, "s": 0.003629}, {"k": 13, "c": 0.0121, "q": -0.0244, "d": 0.0365, "s": 0.001334}, {"k": 14, "c": -0.0442, "q": -0.029, "d": -0.0152, "s": 0.000232}, {"k": 15, "c": -0.001, "q": -0.0112, "d": 0.0102, "s": 0.000105}, {"k": 16, "c": 0.0258, "q": -0.0177, "d": 0.0435, "s": 0.001888}, {"k": 17, "c": -0.0567, "q": -0.0707, "d": 0.014, "s": 0.000195}, {"k": 18, "c": -0.0484, "q": 0.0176, "d": -0.066, "s": 0.00436}, {"k": 19, "c": -0.0156, "q": -0.0067, "d": -0.0089, "s": 7.9e-05}, {"k": 20, "c": 0.0435, "q": -0.0369, "d": 0.0804, "s": 0.006462}, {"k": 21, "c": -0.0016, "q": -0.0253, "d": 0.0236, "s": 0.000559}, {"k": 22, "c": -0.0277, "q": -0.0095, "d": -0.0182, "s": 0.00033}, {"k": 23, "c": -0.0516, "q": -0.0415, "d": -0.0101, "s": 0.000103}, {"k": 24, "c": -0.0181, "q": 0.0791, "d": -0.0972, "s": 0.00945}, {"k": 25, "c": -0.0325, "q": -0.0256, "d": -0.0069, "s": 4.8e-05}, {"k": 26, "c": -0.0117, "q": -0.0102, "d": -0.0015, "s": 2e-06}, {"k": 27, "c": -0.0067, "q": -0.0136, "d": 0.0068, "s": 4.7e-05}, {"k": 28, "c": -0.0218, "q": 0.0237, "d": -0.0455, "s": 0.002072}, {"k": 29, "c": 0.0919, "q": 0.0313, "d": 0.0606, "s": 0.003673}, {"k": 30, "c": 0.0328, "q": 0.0102, "d": 0.0226, "s": 0.000511}, {"k": 31, "c": 0.0224, "q": 0.0182, "d": 0.0042, "s": 1.7e-05}, {"k": 32, "c": -0.0088, "q": 0.0472, "d": -0.056, "s": 0.003138}, {"k": 33, "c": 0.0263, "q": 0.0451, "d": -0.0188, "s": 0.000354}, {"k": 34, "c": 0.0283, "q": 0.0647, "d": -0.0364, "s": 0.001323}, {"k": 35, "c": 0.0256, "q": 0.0185, "d": 0.007, "s": 5e-05}, {"k": 36, "c": 0.057, "q": 0.096, "d": -0.039, "s": 0.001522}, {"k": 37, "c": 0.0368, "q": -0.0042, "d": 0.041, "s": 0.001683}, {"k": 38, "c": 0.0193, "q": -0.0433, "d": 0.0626, "s": 0.003921}, {"k": 39, "c": -0.0357, "q": -0.0195, "d": -0.0161, "s": 0.00026}, {"k": 40, "c": 0.0885, "q": 0.0609, "d": 0.0276, "s": 0.00076}, {"k": 41, "c": -0.096, "q": -0.0477, "d": -0.0483, "s": 0.002336}, {"k": 42, "c": -0.0871, "q": -0.0625, "d": -0.0246, "s": 0.000603}, {"k": 43, "c": -0.0737, "q": -0.0937, "d": 0.0199, "s": 0.000397}, {"k": 44, "c": 0.0645, "q": 0.0471, "d": 0.0174, "s": 0.000302}, {"k": 45, "c": -0.0322, "q": -0.0426, "d": 0.0105, "s": 0.00011}, {"k": 46, "c": -0.0036, "q": -0.0083, "d": 0.0047, "s": 2.2e-05}, {"k": 47, "c": 0.0541, "q": -0.0132, "d": 0.0673, "s": 0.004529}, {"k": 48, "c": -0.0882, "q": -0.0101, "d": -0.078, "s": 0.00609}, {"k": 49, "c": -0.0186, "q": -0.0237, "d": 0.0051, "s": 2.6e-05}, {"k": 50, "c": 0.0139, "q": 0.0252, "d": -0.0113, "s": 0.000128}, {"k": 51, "c": 0.052, "q": 0.0718, "d": -0.0198, "s": 0.000391}, {"k": 52, "c": 0.0129, "q": 0.0206, "d": -0.0078, "s": 6e-05}, {"k": 53, "c": -0.0256, "q": 0.0071, "d": -0.0327, "s": 0.001068}, {"k": 54, "c": -0.0274, "q": 0.0538, "d": -0.0812, "s": 0.00659}, {"k": 55, "c": -0.002, "q": -0.0448, "d": 0.0429, "s": 0.001838}, {"k": 56, "c": 0.0434, "q": 0.0122, "d": 0.0311, "s": 0.00097}, {"k": 57, "c": -0.0576, "q": -0.0138, "d": -0.0439, "s": 0.001923}, {"k": 58, "c": 0.0198, "q": 0.0222, "d": -0.0024, "s": 6e-06}, {"k": 59, "c": -0.0252, "q": 0.0186, "d": -0.0438, "s": 0.001916}, {"k": 60, "c": -0.0146, "q": 0.0571, "d": -0.0717, "s": 0.005147}, {"k": 61, "c": -0.009, "q": 0.0408, "d": -0.0498, "s": 0.002482}, {"k": 62, "c": 0.0184, "q": -0.0162, "d": 0.0346, "s": 0.001195}, {"k": 63, "c": -0.0038, "q": 0.0035, "d": -0.0073, "s": 5.3e-05}, {"k": 64, "c": 0.1108, "q": 0.109, "d": 0.0018, "s": 3e-06}, {"k": 65, "c": -0.0152, "q": 0.0557, "d": -0.0709, "s": 0.005022}, {"k": 66, "c": 0.0814, "q": 0.0104, "d": 0.071, "s": 0.005037}, {"k": 67, "c": 0.0438, "q": 0.0011, "d": 0.0427, "s": 0.00182}, {"k": 68, "c": -0.05, "q": -0.0282, "d": -0.0217, "s": 0.000472}, {"k": 69, "c": 0.082, "q": 0.0535, "d": 0.0286, "s": 0.000816}, {"k": 70, "c": -0.0139, "q": -0.0376, "d": 0.0237, "s": 0.000562}, {"k": 71, "c": -0.0344, "q": -0.0189, "d": -0.0155, "s": 0.00024}, {"k": 72, "c": 0.01, "q": 0.0037, "d": 0.0063, "s": 3.9e-05}, {"k": 73, "c": -0.0334, "q": 0.0195, "d": -0.0528, "s": 0.002789}, {"k": 74, "c": 0.0328, "q": 0.0071, "d": 0.0257, "s": 0.000662}, {"k": 75, "c": -0.0368, "q": -0.0857, "d": 0.0489, "s": 0.002393}, {"k": 76, "c": 0.0425, "q": 0.0056, "d": 0.0369, "s": 0.001361}, {"k": 77, "c": 0.0174, "q": 0.0237, "d": -0.0063, "s": 3.9e-05}, {"k": 78, "c": -0.0034, "q": -0.0458, "d": 0.0425, "s": 0.001802}, {"k": 79, "c": 0.0056, "q": 0.0031, "d": 0.0025, "s": 6e-06}, {"k": 80, "c": 0.1018, "q": 0.0729, "d": 0.029, "s": 0.000838}, {"k": 81, "c": -0.0025, "q": -0.0259, "d": 0.0233, "s": 0.000545}, {"k": 82, "c": -0.013, "q": -0.0425, "d": 0.0296, "s": 0.000875}, {"k": 83, "c": -0.0385, "q": -0.0064, "d": -0.0321, "s": 0.001029}, {"k": 84, "c": 0.0041, "q": 0.0009, "d": 0.0033, "s": 1.1e-05}, {"k": 85, "c": 0.0391, "q": 0.0556, "d": -0.0165, "s": 0.000272}, {"k": 86, "c": 0.0504, "q": 0.006, "d": 0.0444, "s": 0.001974}, {"k": 87, "c": -0.0072, "q": 0.0095, "d": -0.0167, "s": 0.000279}, {"k": 88, "c": 0.0411, "q": 0.0563, "d": -0.0152, "s": 0.000232}, {"k": 89, "c": -0.0307, "q": -0.0581, "d": 0.0274, "s": 0.000752}, {"k": 90, "c": -0.0578, "q": -0.0222, "d": -0.0357, "s": 0.001271}, {"k": 91, "c": 0.0136, "q": 0.0753, "d": -0.0617, "s": 0.003807}, {"k": 92, "c": 0.0958, "q": 0.0384, "d": 0.0575, "s": 0.003301}, {"k": 93, "c": 0.1579, "q": 0.0679, "d": 0.09, "s": 0.008098}, {"k": 94, "c": -0.0334, "q": -0.0222, "d": -0.0112, "s": 0.000126}, {"k": 95, "c": 0.0291, "q": 0.0309, "d": -0.0018, "s": 3e-06}, {"k": 96, "c": -0.0436, "q": -0.0152, "d": -0.0284, "s": 0.000806}, {"k": 97, "c": -0.1396, "q": -0.0603, "d": -0.0792, "s": 0.006275}, {"k": 98, "c": -0.0622, "q": -0.1122, "d": 0.0499, "s": 0.002495}, {"k": 99, "c": -0.0061, "q": 0.0271, "d": -0.0332, "s": 0.001099}, {"k": 100, "c": -0.0596, "q": -0.1406, "d": 0.081, "s": 0.006567}, {"k": 101, "c": -0.0423, "q": -0.0457, "d": 0.0034, "s": 1.1e-05}, {"k": 102, "c": 0.1407, "q": 0.1318, "d": 0.0088, "s": 7.8e-05}, {"k": 103, "c": -0.0578, "q": -0.0727, "d": 0.0149, "s": 0.000223}, {"k": 104, "c": -0.0125, "q": -0.0092, "d": -0.0033, "s": 1.1e-05}, {"k": 105, "c": -0.0814, "q": -0.0386, "d": -0.0428, "s": 0.00183}, {"k": 106, "c": -0.0264, "q": -0.0194, "d": -0.007, "s": 4.9e-05}, {"k": 107, "c": 0.0009, "q": 0.0321, "d": -0.0312, "s": 0.000972}, {"k": 108, "c": -0.0292, "q": -0.0713, "d": 0.0421, "s": 0.001773}, {"k": 109, "c": 0.0227, "q": 0.0286, "d": -0.0059, "s": 3.5e-05}, {"k": 110, "c": -0.0747, "q": -0.046, "d": -0.0286, "s": 0.000821}, {"k": 111, "c": 0.023, "q": 0.0209, "d": 0.0021, "s": 5e-06}, {"k": 112, "c": -0.0156, "q": -0.0151, "d": -0.0005, "s": 0.0}, {"k": 113, "c": -0.0065, "q": 0.0215, "d": -0.028, "s": 0.000781}, {"k": 114, "c": -0.0073, "q": 0.0065, "d": -0.0138, "s": 0.00019}, {"k": 115, "c": -0.1458, "q": -0.1591, "d": 0.0133, "s": 0.000177}, {"k": 116, "c": -0.0019, "q": 0.0552, "d": -0.0571, "s": 0.003258}, {"k": 117, "c": -0.0078, "q": -0.0117, "d": 0.0039, "s": 1.5e-05}, {"k": 118, "c": -0.0155, "q": -0.0163, "d": 0.0008, "s": 1e-06}, {"k": 119, "c": 0.0568, "q": 0.065, "d": -0.0083, "s": 6.8e-05}, {"k": 120, "c": 0.0168, "q": 0.0233, "d": -0.0065, "s": 4.3e-05}, {"k": 121, "c": 0.0433, "q": 0.0769, "d": -0.0336, "s": 0.001132}, {"k": 122, "c": -0.0305, "q": -0.0673, "d": 0.0368, "s": 0.001355}, {"k": 123, "c": 0.0363, "q": 0.0757, "d": -0.0394, "s": 0.001552}, {"k": 124, "c": 0.0202, "q": 0.0154, "d": 0.0049, "s": 2.4e-05}, {"k": 125, "c": 0.0568, "q": 0.052, "d": 0.0048, "s": 2.3e-05}, {"k": 126, "c": -0.0279, "q": -0.0696, "d": 0.0418, "s": 0.001745}, {"k": 127, "c": 0.0, "q": -0.0, "d": 0.0, "s": 0.0}, {"k": 128, "c": 0.0613, "q": 0.093, "d": -0.0317, "s": 0.001007}, {"k": 129, "c": -0.0477, "q": -0.1148, "d": 0.0671, "s": 0.004508}, {"k": 130, "c": 0.065, "q": 0.037, "d": 0.028, "s": 0.000783}, {"k": 131, "c": -0.0664, "q": 0.0352, "d": -0.1016, "s": 0.010314}, {"k": 132, "c": -0.102, "q": -0.0797, "d": -0.0223, "s": 0.000496}, {"k": 133, "c": 0.0019, "q": -0.0291, "d": 0.0309, "s": 0.000958}, {"k": 134, "c": -0.0236, "q": -0.0207, "d": -0.0029, "s": 8e-06}, {"k": 135, "c": 0.0518, "q": 0.0197, "d": 0.0321, "s": 0.001032}, {"k": 136, "c": -0.0321, "q": -0.0024, "d": -0.0298, "s": 0.000885}, {"k": 137, "c": 0.0808, "q": 0.0385, "d": 0.0423, "s": 0.001793}, {"k": 138, "c": -0.0103, "q": 0.0993, "d": -0.1096, "s": 0.012004}, {"k": 139, "c": -0.1343, "q": -0.1092, "d": -0.0251, "s": 0.000628}, {"k": 140, "c": 0.0433, "q": 0.0216, "d": 0.0217, "s": 0.000473}, {"k": 141, "c": 0.1457, "q": 0.0614, "d": 0.0843, "s": 0.007105}, {"k": 142, "c": 0.0211, "q": 0.0762, "d": -0.0551, "s": 0.003035}, {"k": 143, "c": 0.0002, "q": -0.0165, "d": 0.0167, "s": 0.000277}, {"k": 144, "c": 0.0297, "q": -0.0416, "d": 0.0713, "s": 0.005082}, {"k": 145, "c": -0.0104, "q": -0.0497, "d": 0.0393, "s": 0.001548}, {"k": 146, "c": -0.0094, "q": -0.0569, "d": 0.0475, "s": 0.002257}, {"k": 147, "c": 0.092, "q": 0.0329, "d": 0.0591, "s": 0.003491}, {"k": 148, "c": -0.0018, "q": -0.0326, "d": 0.0309, "s": 0.000952}, {"k": 149, "c": -0.011, "q": 0.0715, "d": -0.0824, "s": 0.006795}, {"k": 150, "c": 0.0416, "q": 0.004, "d": 0.0376, "s": 0.001412}, {"k": 151, "c": -0.024, "q": 0.0125, "d": -0.0365, "s": 0.001333}, {"k": 152, "c": 0.0964, "q": -0.0103, "d": 0.1067, "s": 0.011383}, {"k": 153, "c": 0.0773, "q": 0.0372, "d": 0.0402, "s": 0.001612}, {"k": 154, "c": 0.0415, "q": 0.0532, "d": -0.0117, "s": 0.000137}, {"k": 155, "c": -0.0372, "q": -0.0318, "d": -0.0054, "s": 2.9e-05}, {"k": 156, "c": 0.0577, "q": 0.051, "d": 0.0067, "s": 4.5e-05}, {"k": 157, "c": -0.0035, "q": -0.0053, "d": 0.0018, "s": 3e-06}, {"k": 158, "c": -0.0054, "q": 0.0351, "d": -0.0404, "s": 0.001635}, {"k": 159, "c": -0.062, "q": -0.0039, "d": -0.0581, "s": 0.003378}, {"k": 160, "c": -0.0132, "q": -0.0205, "d": 0.0073, "s": 5.3e-05}, {"k": 161, "c": -0.1239, "q": -0.0799, "d": -0.044, "s": 0.001937}, {"k": 162, "c": -0.0472, "q": -0.0088, "d": -0.0384, "s": 0.001475}, {"k": 163, "c": -0.004, "q": 0.0429, "d": -0.0469, "s": 0.002202}, {"k": 164, "c": -0.0189, "q": -0.0025, "d": -0.0164, "s": 0.000269}, {"k": 165, "c": 0.0071, "q": 0.0464, "d": -0.0393, "s": 0.001544}, {"k": 166, "c": -0.0228, "q": -0.0264, "d": 0.0036, "s": 1.3e-05}, {"k": 167, "c": -0.0147, "q": -0.0156, "d": 0.0009, "s": 1e-06}, {"k": 168, "c": -0.0365, "q": -0.0773, "d": 0.0408, "s": 0.001667}, {"k": 169, "c": 0.0361, "q": -0.0069, "d": 0.043, "s": 0.001848}, {"k": 170, "c": 0.063, "q": 0.1026, "d": -0.0396, "s": 0.001569}, {"k": 171, "c": -0.0115, "q": -0.0402, "d": 0.0287, "s": 0.000825}, {"k": 172, "c": 0.0851, "q": 0.0551, "d": 0.03, "s": 0.000898}, {"k": 173, "c": 0.0182, "q": 0.0264, "d": -0.0083, "s": 6.8e-05}, {"k": 174, "c": 0.1018, "q": 0.1033, "d": -0.0016, "s": 2e-06}, {"k": 175, "c": 0.035, "q": -0.0269, "d": 0.062, "s": 0.003838}, {"k": 176, "c": -0.0921, "q": -0.0674, "d": -0.0248, "s": 0.000613}, {"k": 177, "c": 0.0396, "q": 0.0279, "d": 0.0117, "s": 0.000137}, {"k": 178, "c": -0.0775, "q": -0.0516, "d": -0.0259, "s": 0.000673}, {"k": 179, "c": 0.0122, "q": 0.0196, "d": -0.0074, "s": 5.5e-05}, {"k": 180, "c": -0.11, "q": -0.1173, "d": 0.0073, "s": 5.3e-05}, {"k": 181, "c": -0.0377, "q": -0.0105, "d": -0.0271, "s": 0.000735}, {"k": 182, "c": -0.0287, "q": 0.0027, "d": -0.0314, "s": 0.000984}, {"k": 183, "c": -0.1002, "q": -0.0778, "d": -0.0224, "s": 0.000502}, {"k": 184, "c": -0.055, "q": -0.0524, "d": -0.0026, "s": 7e-06}, {"k": 185, "c": -0.01, "q": -0.0298, "d": 0.0198, "s": 0.000393}, {"k": 186, "c": 0.0294, "q": -0.0089, "d": 0.0383, "s": 0.001464}, {"k": 187, "c": -0.0561, "q": 0.0073, "d": -0.0634, "s": 0.004018}, {"k": 188, "c": -0.0069, "q": -0.0433, "d": 0.0364, "s": 0.001325}, {"k": 189, "c": -0.1094, "q": -0.0664, "d": -0.043, "s": 0.001848}, {"k": 190, "c": -0.0456, "q": -0.0124, "d": -0.0332, "s": 0.001103}, {"k": 191, "c": -0.0233, "q": -0.0167, "d": -0.0066, "s": 4.3e-05}, {"k": 192, "c": 0.087, "q": 0.0875, "d": -0.0005, "s": 0.0}, {"k": 193, "c": 0.087, "q": 0.0846, "d": 0.0024, "s": 6e-06}, {"k": 194, "c": 0.0064, "q": -0.0161, "d": 0.0225, "s": 0.000505}, {"k": 195, "c": 0.0124, "q": 0.0187, "d": -0.0063, "s": 4e-05}, {"k": 196, "c": 0.0051, "q": -0.0562, "d": 0.0614, "s": 0.003765}, {"k": 197, "c": 0.0346, "q": 0.0768, "d": -0.0421, "s": 0.001775}, {"k": 198, "c": -0.0005, "q": 0.0292, "d": -0.0297, "s": 0.000881}, {"k": 199, "c": -0.03, "q": -0.017, "d": -0.0131, "s": 0.000171}, {"k": 200, "c": 0.0045, "q": -0.0277, "d": 0.0322, "s": 0.001039}, {"k": 201, "c": 0.0365, "q": 0.0027, "d": 0.0338, "s": 0.001142}, {"k": 202, "c": 0.0427, "q": -0.023, "d": 0.0657, "s": 0.004316}, {"k": 203, "c": 0.0286, "q": 0.0438, "d": -0.0152, "s": 0.000232}, {"k": 204, "c": 0.1208, "q": 0.0483, "d": 0.0725, "s": 0.005263}, {"k": 205, "c": 0.0062, "q": 0.0076, "d": -0.0015, "s": 2e-06}, {"k": 206, "c": 0.1144, "q": 0.0188, "d": 0.0956, "s": 0.009137}, {"k": 207, "c": 0.0294, "q": 0.0047, "d": 0.0248, "s": 0.000613}, {"k": 208, "c": -0.0539, "q": 0.0157, "d": -0.0697, "s": 0.004857}, {"k": 209, "c": 0.0646, "q": 0.0194, "d": 0.0452, "s": 0.002046}, {"k": 210, "c": 0.0506, "q": 0.0416, "d": 0.009, "s": 8.1e-05}, {"k": 211, "c": -0.0325, "q": 0.0179, "d": -0.0504, "s": 0.002537}, {"k": 212, "c": 0.0394, "q": 0.0881, "d": -0.0487, "s": 0.002371}, {"k": 213, "c": 0.0841, "q": 0.1207, "d": -0.0366, "s": 0.001339}, {"k": 214, "c": -0.0164, "q": -0.0416, "d": 0.0252, "s": 0.000636}, {"k": 215, "c": -0.0102, "q": -0.0047, "d": -0.0055, "s": 3.1e-05}, {"k": 216, "c": 0.023, "q": 0.0612, "d": -0.0382, "s": 0.001457}, {"k": 217, "c": -0.0705, "q": -0.0873, "d": 0.0169, "s": 0.000284}, {"k": 218, "c": 0.0457, "q": 0.0068, "d": 0.039, "s": 0.001518}, {"k": 219, "c": -0.0758, "q": -0.054, "d": -0.0218, "s": 0.000473}, {"k": 220, "c": 0.0223, "q": -0.0021, "d": 0.0244, "s": 0.000595}, {"k": 221, "c": 0.0138, "q": -0.0399, "d": 0.0537, "s": 0.00288}, {"k": 222, "c": -0.0191, "q": -0.0699, "d": 0.0508, "s": 0.002585}, {"k": 223, "c": -0.0, "q": -0.0, "d": -0.0, "s": 0.0}, {"k": 224, "c": -0.0198, "q": -0.0546, "d": 0.0348, "s": 0.001208}, {"k": 225, "c": 0.0502, "q": 0.0475, "d": 0.0028, "s": 8e-06}, {"k": 226, "c": -0.0427, "q": 0.0167, "d": -0.0594, "s": 0.00353}, {"k": 227, "c": 0.0237, "q": 0.0091, "d": 0.0146, "s": 0.000214}, {"k": 228, "c": 0.0298, "q": 0.0212, "d": 0.0086, "s": 7.4e-05}, {"k": 229, "c": -0.0463, "q": -0.046, "d": -0.0003, "s": 0.0}, {"k": 230, "c": -0.0192, "q": 0.0691, "d": -0.0883, "s": 0.007797}, {"k": 231, "c": 0.0282, "q": 0.0337, "d": -0.0055, "s": 3e-05}, {"k": 232, "c": 0.0125, "q": 0.0115, "d": 0.001, "s": 1e-06}, {"k": 233, "c": 0.0514, "q": 0.0899, "d": -0.0385, "s": 0.001482}, {"k": 234, "c": -0.0125, "q": -0.0128, "d": 0.0003, "s": 0.0}, {"k": 235, "c": 0.0271, "q": -0.0066, "d": 0.0337, "s": 0.001137}, {"k": 236, "c": 0.1695, "q": 0.1432, "d": 0.0264, "s": 0.000695}, {"k": 237, "c": 0.0464, "q": 0.0484, "d": -0.002, "s": 4e-06}, {"k": 238, "c": 0.0089, "q": -0.0236, "d": 0.0324, "s": 0.001051}, {"k": 239, "c": 0.01, "q": -0.0111, "d": 0.0211, "s": 0.000445}, {"k": 240, "c": -0.0205, "q": 0.0039, "d": -0.0245, "s": 0.000598}, {"k": 241, "c": -0.0231, "q": -0.017, "d": -0.0061, "s": 3.7e-05}, {"k": 242, "c": 0.0643, "q": 0.0633, "d": 0.001, "s": 1e-06}, {"k": 243, "c": -0.0387, "q": -0.0802, "d": 0.0416, "s": 0.001727}, {"k": 244, "c": 0.0526, "q": -0.0385, "d": 0.0911, "s": 0.008297}, {"k": 245, "c": 0.0432, "q": 0.0692, "d": -0.026, "s": 0.000675}, {"k": 246, "c": 0.0179, "q": -0.0343, "d": 0.0522, "s": 0.002724}, {"k": 247, "c": 0.0684, "q": 0.1102, "d": -0.0417, "s": 0.001741}, {"k": 248, "c": -0.0022, "q": -0.0125, "d": 0.0103, "s": 0.000107}, {"k": 249, "c": -0.0152, "q": 0.0239, "d": -0.0391, "s": 0.001529}, {"k": 250, "c": 0.0448, "q": -0.0721, "d": 0.1169, "s": 0.013675}, {"k": 251, "c": -0.0023, "q": 0.0688, "d": -0.0711, "s": 0.005056}, {"k": 252, "c": -0.0472, "q": -0.088, "d": 0.0408, "s": 0.001661}, {"k": 253, "c": -0.0522, "q": -0.1105, "d": 0.0583, "s": 0.003398}, {"k": 254, "c": -0.0311, "q": 0.0348, "d": -0.0659, "s": 0.004341}, {"k": 255, "c": 0.049, "q": 0.042, "d": 0.007, "s": 4.9e-05}, {"k": 256, "c": -0.0884, "q": -0.0519, "d": -0.0365, "s": 0.001331}, {"k": 257, "c": -0.0392, "q": -0.0774, "d": 0.0383, "s": 0.001463}, {"k": 258, "c": -0.0381, "q": -0.035, "d": -0.0031, "s": 1e-05}, {"k": 259, "c": -0.0369, "q": -0.0095, "d": -0.0274, "s": 0.000752}, {"k": 260, "c": -0.077, "q": -0.0287, "d": -0.0483, "s": 0.002337}, {"k": 261, "c": -0.0213, "q": 0.0231, "d": -0.0444, "s": 0.001973}, {"k": 262, "c": -0.0561, "q": -0.0349, "d": -0.0211, "s": 0.000447}, {"k": 263, "c": -0.0127, "q": -0.0524, "d": 0.0396, "s": 0.001571}, {"k": 264, "c": 0.0335, "q": 0.0317, "d": 0.0018, "s": 3e-06}, {"k": 265, "c": 0.0675, "q": -0.0222, "d": 0.0898, "s": 0.008056}, {"k": 266, "c": -0.0545, "q": -0.0691, "d": 0.0146, "s": 0.000214}, {"k": 267, "c": -0.0522, "q": 0.0188, "d": -0.071, "s": 0.005045}, {"k": 268, "c": -0.0445, "q": 0.0207, "d": -0.0652, "s": 0.004252}, {"k": 269, "c": 0.0475, "q": 0.0615, "d": -0.014, "s": 0.000196}, {"k": 270, "c": 0.0494, "q": 0.0425, "d": 0.0069, "s": 4.8e-05}, {"k": 271, "c": -0.0279, "q": -0.0887, "d": 0.0609, "s": 0.003705}, {"k": 272, "c": 0.0348, "q": 0.0059, "d": 0.0288, "s": 0.000832}, {"k": 273, "c": -0.046, "q": -0.0521, "d": 0.006, "s": 3.7e-05}, {"k": 274, "c": 0.0342, "q": 0.0081, "d": 0.0261, "s": 0.00068}, {"k": 275, "c": 0.0228, "q": -0.007, "d": 0.0299, "s": 0.000892}, {"k": 276, "c": 0.0538, "q": 0.0229, "d": 0.031, "s": 0.00096}, {"k": 277, "c": 0.1084, "q": 0.0668, "d": 0.0416, "s": 0.001731}, {"k": 278, "c": 0.02, "q": 0.0486, "d": -0.0286, "s": 0.000818}, {"k": 279, "c": -0.0503, "q": -0.0528, "d": 0.0025, "s": 6e-06}, {"k": 280, "c": 0.0169, "q": 0.0209, "d": -0.004, "s": 1.6e-05}, {"k": 281, "c": -0.014, "q": -0.0445, "d": 0.0305, "s": 0.000931}, {"k": 282, "c": 0.0014, "q": -0.0371, "d": 0.0385, "s": 0.001483}, {"k": 283, "c": -0.0698, "q": -0.0436, "d": -0.0262, "s": 0.000687}, {"k": 284, "c": -0.0489, "q": -0.0074, "d": -0.0415, "s": 0.001724}, {"k": 285, "c": 0.073, "q": 0.0613, "d": 0.0116, "s": 0.000136}, {"k": 286, "c": 0.0179, "q": -0.0195, "d": 0.0374, "s": 0.001398}, {"k": 287, "c": 0.0885, "q": 0.0901, "d": -0.0017, "s": 3e-06}, {"k": 288, "c": 0.0404, "q": 0.0526, "d": -0.0122, "s": 0.00015}, {"k": 289, "c": -0.0201, "q": -0.0311, "d": 0.011, "s": 0.000121}, {"k": 290, "c": -0.0158, "q": -0.0411, "d": 0.0253, "s": 0.000642}, {"k": 291, "c": -0.0591, "q": -0.0353, "d": -0.0239, "s": 0.000569}, {"k": 292, "c": -0.0044, "q": -0.0878, "d": 0.0833, "s": 0.006944}, {"k": 293, "c": -0.0366, "q": -0.0631, "d": 0.0265, "s": 0.000703}, {"k": 294, "c": 0.0581, "q": 0.1348, "d": -0.0766, "s": 0.005875}, {"k": 295, "c": -0.062, "q": -0.1002, "d": 0.0381, "s": 0.001455}, {"k": 296, "c": -0.0443, "q": -0.031, "d": -0.0133, "s": 0.000177}, {"k": 297, "c": -0.0704, "q": -0.0678, "d": -0.0026, "s": 7e-06}, {"k": 298, "c": -0.0414, "q": -0.0466, "d": 0.0052, "s": 2.7e-05}, {"k": 299, "c": 0.0213, "q": 0.0128, "d": 0.0085, "s": 7.2e-05}, {"k": 300, "c": -0.0313, "q": -0.0415, "d": 0.0102, "s": 0.000104}, {"k": 301, "c": 0.0564, "q": 0.0878, "d": -0.0314, "s": 0.000987}, {"k": 302, "c": 0.0236, "q": 0.0171, "d": 0.0065, "s": 4.3e-05}, {"k": 303, "c": -0.024, "q": -0.0018, "d": -0.0222, "s": 0.000492}, {"k": 304, "c": 0.088, "q": 0.0178, "d": 0.0703, "s": 0.00494}, {"k": 305, "c": -0.0424, "q": -0.0712, "d": 0.0288, "s": 0.000831}, {"k": 306, "c": 0.0586, "q": 0.0356, "d": 0.023, "s": 0.000528}, {"k": 307, "c": -0.045, "q": -0.0567, "d": 0.0116, "s": 0.000136}, {"k": 308, "c": -0.0163, "q": -0.035, "d": 0.0187, "s": 0.000349}, {"k": 309, "c": -0.0422, "q": 0.0011, "d": -0.0433, "s": 0.001873}, {"k": 310, "c": 0.0089, "q": 0.0108, "d": -0.0019, "s": 4e-06}, {"k": 311, "c": -0.0214, "q": -0.038, "d": 0.0166, "s": 0.000275}, {"k": 312, "c": -0.0012, "q": -0.0157, "d": 0.0145, "s": 0.000209}, {"k": 313, "c": 0.0817, "q": 0.0901, "d": -0.0084, "s": 7.1e-05}, {"k": 314, "c": -0.1352, "q": -0.1108, "d": -0.0244, "s": 0.000597}, {"k": 315, "c": 0.0009, "q": -0.0043, "d": 0.0052, "s": 2.7e-05}, {"k": 316, "c": -0.036, "q": 0.0018, "d": -0.0378, "s": 0.00143}, {"k": 317, "c": -0.0092, "q": -0.0665, "d": 0.0573, "s": 0.003286}, {"k": 318, "c": 0.0215, "q": 0.0194, "d": 0.0021, "s": 4e-06}, {"k": 319, "c": -0.0, "q": -0.0, "d": -0.0, "s": 0.0}, {"k": 320, "c": 0.0627, "q": 0.0908, "d": -0.028, "s": 0.000786}, {"k": 321, "c": 0.0798, "q": 0.1333, "d": -0.0535, "s": 0.00286}, {"k": 322, "c": -0.008, "q": -0.0167, "d": 0.0086, "s": 7.4e-05}, {"k": 323, "c": -0.0303, "q": -0.0636, "d": 0.0333, "s": 0.001108}, {"k": 324, "c": 0.0243, "q": 0.0399, "d": -0.0156, "s": 0.000244}, {"k": 325, "c": 0.0243, "q": 0.0215, "d": 0.0028, "s": 8e-06}, {"k": 326, "c": -0.0346, "q": 0.0563, "d": -0.0909, "s": 0.008268}, {"k": 327, "c": 0.0253, "q": 0.1066, "d": -0.0813, "s": 0.00661}, {"k": 328, "c": 0.0612, "q": 0.0689, "d": -0.0077, "s": 5.9e-05}, {"k": 329, "c": 0.0927, "q": 0.1069, "d": -0.0142, "s": 0.000202}, {"k": 330, "c": 0.0298, "q": -0.03, "d": 0.0597, "s": 0.003569}, {"k": 331, "c": -0.0202, "q": -0.0048, "d": -0.0154, "s": 0.000237}, {"k": 332, "c": 0.0886, "q": 0.0331, "d": 0.0555, "s": 0.003077}, {"k": 333, "c": -0.008, "q": -0.0182, "d": 0.0102, "s": 0.000105}, {"k": 334, "c": -0.044, "q": -0.0113, "d": -0.0327, "s": 0.00107}, {"k": 335, "c": 0.063, "q": 0.0194, "d": 0.0436, "s": 0.0019}, {"k": 336, "c": 0.032, "q": 0.015, "d": 0.017, "s": 0.000289}, {"k": 337, "c": -0.0098, "q": -0.0138, "d": 0.0041, "s": 1.7e-05}, {"k": 338, "c": 0.0001, "q": -0.0129, "d": 0.013, "s": 0.000168}, {"k": 339, "c": -0.0346, "q": -0.0029, "d": -0.0318, "s": 0.001009}, {"k": 340, "c": -0.0262, "q": 0.0713, "d": -0.0976, "s": 0.009518}, {"k": 341, "c": 0.0221, "q": 0.0366, "d": -0.0145, "s": 0.00021}, {"k": 342, "c": -0.0072, "q": -0.0004, "d": -0.0068, "s": 4.6e-05}, {"k": 343, "c": -0.028, "q": -0.0281, "d": 0.0001, "s": 0.0}, {"k": 344, "c": 0.068, "q": 0.0198, "d": 0.0482, "s": 0.002322}, {"k": 345, "c": -0.0403, "q": -0.0062, "d": -0.0341, "s": 0.001162}, {"k": 346, "c": -0.0138, "q": 0.003, "d": -0.0168, "s": 0.000282}, {"k": 347, "c": 0.0253, "q": 0.0182, "d": 0.0071, "s": 5.1e-05}, {"k": 348, "c": -0.028, "q": -0.0209, "d": -0.0071, "s": 5.1e-05}, {"k": 349, "c": -0.0327, "q": -0.0248, "d": -0.0079, "s": 6.2e-05}, {"k": 350, "c": -0.022, "q": 0.0162, "d": -0.0382, "s": 0.00146}, {"k": 351, "c": -0.064, "q": -0.1, "d": 0.036, "s": 0.001296}, {"k": 352, "c": 0.0255, "q": -0.0332, "d": 0.0588, "s": 0.003452}, {"k": 353, "c": -0.0536, "q": -0.0453, "d": -0.0083, "s": 7e-05}, {"k": 354, "c": -0.0141, "q": -0.0188, "d": 0.0047, "s": 2.2e-05}, {"k": 355, "c": 0.0699, "q": 0.0311, "d": 0.0388, "s": 0.001507}, {"k": 356, "c": -0.0364, "q": -0.0206, "d": -0.0158, "s": 0.000251}, {"k": 357, "c": 0.0251, "q": -0.0031, "d": 0.0282, "s": 0.000793}, {"k": 358, "c": 0.0337, "q": 0.0138, "d": 0.0199, "s": 0.000396}, {"k": 359, "c": -0.0009, "q": -0.0334, "d": 0.0325, "s": 0.001054}, {"k": 360, "c": -0.0074, "q": -0.0258, "d": 0.0184, "s": 0.00034}, {"k": 361, "c": -0.038, "q": -0.0281, "d": -0.0099, "s": 9.9e-05}, {"k": 362, "c": -0.0151, "q": 0.0179, "d": -0.033, "s": 0.001089}, {"k": 363, "c": -0.0079, "q": 0.0403, "d": -0.0482, "s": 0.002322}, {"k": 364, "c": -0.0154, "q": 0.0147, "d": -0.0302, "s": 0.00091}, {"k": 365, "c": -0.121, "q": -0.0103, "d": -0.1106, "s": 0.012243}, {"k": 366, "c": -0.0482, "q": -0.1027, "d": 0.0545, "s": 0.002975}, {"k": 367, "c": -0.0361, "q": -0.0064, "d": -0.0297, "s": 0.000883}, {"k": 368, "c": -0.0027, "q": 0.0158, "d": -0.0185, "s": 0.000341}, {"k": 369, "c": -0.0606, "q": -0.0918, "d": 0.0313, "s": 0.000977}, {"k": 370, "c": -0.0573, "q": -0.0559, "d": -0.0013, "s": 2e-06}, {"k": 371, "c": 0.0401, "q": 0.0331, "d": 0.007, "s": 4.9e-05}, {"k": 372, "c": -0.0038, "q": -0.0039, "d": 0.0001, "s": 0.0}, {"k": 373, "c": -0.0077, "q": -0.0209, "d": 0.0132, "s": 0.000173}, {"k": 374, "c": 0.0634, "q": 0.0087, "d": 0.0546, "s": 0.002984}, {"k": 375, "c": -0.0289, "q": -0.0921, "d": 0.0632, "s": 0.003996}, {"k": 376, "c": -0.0491, "q": 0.0398, "d": -0.0889, "s": 0.007907}, {"k": 377, "c": 0.0016, "q": 0.0101, "d": -0.0085, "s": 7.3e-05}, {"k": 378, "c": -0.034, "q": -0.0512, "d": 0.0172, "s": 0.000297}, {"k": 379, "c": 0.0379, "q": -0.0629, "d": 0.1008, "s": 0.01017}, {"k": 380, "c": 0.0618, "q": 0.0663, "d": -0.0045, "s": 2e-05}, {"k": 381, "c": -0.1051, "q": -0.0827, "d": -0.0224, "s": 0.000502}, {"k": 382, "c": -0.1168, "q": -0.0374, "d": -0.0794, "s": 0.0063}, {"k": 383, "c": 0.0115, "q": 0.0296, "d": -0.0181, "s": 0.000326}], "cum": [0.018786, 0.018868, 0.019488, 0.019801, 0.022004, 0.022018, 0.024321, 0.024323, 0.024324, 0.025349, 0.029187, 0.030035, 0.033664, 0.034999, 0.035231, 0.035335, 0.037223, 0.037418, 0.041779, 0.041857, 0.04832, 0.048878, 0.049208, 0.049311, 0.058761, 0.058808, 0.058811, 0.058857, 0.060929, 0.064602, 0.065113, 0.06513, 0.068268, 0.068622, 0.069945, 0.069995, 0.071517, 0.0732, 0.077121, 0.077381, 0.078142, 0.080477, 0.081081, 0.081478, 0.08178, 0.08189, 0.081911, 0.086441, 0.092531, 0.092557, 0.092685, 0.093076, 0.093137, 0.094205, 0.100794, 0.102633, 0.103602, 0.105525, 0.105531, 0.107447, 0.112594, 0.115076, 0.116271, 0.116324, 0.116327, 0.121349, 0.126386, 0.128206, 0.128678, 0.129494, 0.130056, 0.130296, 0.130335, 0.133124, 0.133786, 0.136179, 0.137539, 0.137579, 0.139381, 0.139388, 0.140226, 0.140771, 0.141645, 0.142675, 0.142686, 0.142958, 0.144932, 0.14521, 0.145443, 0.146195, 0.147466, 0.151273, 0.154574, 0.162672, 0.162798, 0.162801, 0.163607, 0.169882, 0.172376, 0.173475, 0.180042, 0.180054, 0.180132, 0.180355, 0.180365, 0.182196, 0.182245, 0.183217, 0.18499, 0.185025, 0.185846, 0.18585, 0.185851, 0.186632, 0.186822, 0.186999, 0.190257, 0.190273, 0.190274, 0.190342, 0.190384, 0.191517, 0.192872, 0.194424, 0.194447, 0.194471, 0.196215, 0.196215, 0.197222, 0.20173, 0.202513, 0.212827, 0.213323, 0.214281, 0.214289, 0.215321, 0.216206, 0.217999, 0.230003, 0.230631, 0.231104, 0.238208, 0.241243, 0.241521, 0.246602, 0.248151, 0.250408, 0.253899, 0.25485, 0.261645, 0.263057, 0.26439, 0.275773, 0.277385, 0.277523, 0.277552, 0.277597, 0.2776, 0.279236, 0.282614, 0.282667, 0.284604, 0.286079, 0.288281, 0.28855, 0.290094, 0.290107, 0.290108, 0.291775, 0.293623, 0.295192, 0.296017, 0.296914, 0.296983, 0.296985, 0.300823, 0.301436, 0.301572, 0.302245, 0.3023, 0.302354, 0.303089, 0.304073, 0.304575, 0.304581, 0.304974, 0.306438, 0.310456, 0.311781, 0.313629, 0.314732, 0.314775, 0.314775, 0.314781, 0.315286, 0.315326, 0.31909, 0.320865, 0.321746, 0.321917, 0.322955, 0.324098, 0.328414, 0.328645, 0.333908, 0.33391, 0.343047, 0.34366, 0.348517, 0.350563, 0.350644, 0.353182, 0.355552, 0.356892, 0.357528, 0.357558, 0.359016, 0.3593, 0.360818, 0.361291, 0.361886, 0.364766, 0.367351, 0.367351, 0.368559, 0.368567, 0.372097, 0.372311, 0.372385, 0.372385, 0.380182, 0.380212, 0.380213, 0.381695, 0.381695, 0.382831, 0.383526, 0.38353, 0.384581, 0.385027, 0.385625, 0.385662, 0.385663, 0.38739, 0.395686, 0.396361, 0.399085, 0.400826, 0.400932, 0.402461, 0.416136, 0.421192, 0.422853, 0.426251, 0.430592, 0.430641, 0.431972, 0.433435, 0.433445, 0.434197, 0.436534, 0.438507, 0.438953, 0.440524, 0.440528, 0.448584, 0.448798, 0.453843, 0.458095, 0.458291, 0.458339, 0.462044, 0.462875, 0.462912, 0.463592, 0.464484, 0.465443, 0.467175, 0.467993, 0.467999, 0.468016, 0.468946, 0.470429, 0.471117, 0.472841, 0.472976, 0.474374, 0.474377, 0.474527, 0.474648, 0.475291, 0.47586, 0.482803, 0.483506, 0.489381, 0.490836, 0.491013, 0.49102, 0.491047, 0.491119, 0.491223, 0.49221, 0.492252, 0.492744, 0.497684, 0.498515, 0.499043, 0.499178, 0.499527, 0.501401, 0.501404, 0.50168, 0.501889, 0.501959, 0.502556, 0.502583, 0.504013, 0.5073, 0.507304, 0.507304, 0.50809, 0.51095, 0.511024, 0.512132, 0.512376, 0.512384, 0.520652, 0.527262, 0.527322, 0.527523, 0.531092, 0.531329, 0.534406, 0.534511, 0.535581, 0.537481, 0.53777, 0.537786, 0.537954, 0.538963, 0.548481, 0.548691, 0.548737, 0.548737, 0.551059, 0.552221, 0.552503, 0.552553, 0.552604, 0.552666, 0.554127, 0.555423, 0.558876, 0.558945, 0.558967, 0.560474, 0.560725, 0.561518, 0.561914, 0.562967, 0.563307, 0.563406, 0.564495, 0.566817, 0.567727, 0.579971, 0.582945, 0.583829, 0.58417, 0.585147, 0.585149, 0.585198, 0.585198, 0.585371, 0.588355, 0.592351, 0.600258, 0.60033, 0.600627, 0.610798, 0.610818, 0.61132, 0.61762, 0.617946], "sum": 0.617946, "dist": 0.7861, "big": [0, 250, 365, 138, 152]}, "ranking": [{"rank": 1, "id": "G01-S01", "goal": 1, "pages": "10-11", "head": "Revised poverty estimates show more people in extreme poverty, putting the 2030 goal fur", "d": 0.7861}, {"rank": 2, "id": "G01-S03", "goal": 1, "pages": "10-11", "head": "Working poverty rate has decreased worldwide but persists in vulnerable regions", "d": 0.8651}, {"rank": 3, "id": "G01-S02", "goal": 1, "pages": "10-11", "head": "Revised poverty estimates show more people in extreme poverty, putting the 2030 goal fur", "d": 0.8978}, {"rank": 4, "id": "G11-S01", "goal": 11, "pages": "32-33", "head": "Housing affordability crisis affects up to 3 billion people worldwide", "d": 0.9267}, {"rank": 5, "id": "G02-S01", "goal": 2, "pages": "12-13", "head": "Global hunger and food insecurity have declined in recent years, but progress has been u", "d": 0.9814}, {"rank": 6, "id": "G02-S02", "goal": 2, "pages": "12-13", "head": "Global hunger and food insecurity have declined in recent years, but progress has been u", "d": 1.0059}, {"rank": 7, "id": "G11-S02", "goal": 11, "pages": "32-33", "head": "Housing affordability crisis affects up to 3 billion people worldwide", "d": 1.0192}, {"rank": 8, "id": "G01-S04", "goal": 1, "pages": "10-11", "head": "Social protection coverage is on the rise, but billions are still unprotected", "d": 1.0337}, {"rank": 9, "id": "G10-S01", "goal": 10, "pages": "30-31", "head": "Poorer economies are less likely to experience above-average growth among the bottom 40 ", "d": 1.0359}, {"rank": 10, "id": "G07-S01", "goal": 7, "pages": "24-25", "head": "The past decade saw 45 countries achieving universal electricity access, but little prog", "d": 1.0404}, {"rank": 11, "id": "G01-S05", "goal": 1, "pages": "10-11", "head": "Social protection coverage is on the rise, but billions are still unprotected", "d": 1.0466}, {"rank": 12, "id": "G03-S01", "goal": 3, "pages": "14-17", "head": "Global maternal deaths fall slightly, but progress stalls in high-burden countries", "d": 1.065}, {"rank": 13, "id": "G01-S09", "goal": 1, "pages": "10-11", "head": "Direct transfers benefit the poorest the most, while education and health spending vary ", "d": 1.0731}, {"rank": 14, "id": "G03-S21", "goal": 3, "pages": "14-17", "head": "Despite a growing health workforce, a global shortage persists and is growing as the pop", "d": 1.0761}, {"rank": 15, "id": "G13-S07", "goal": 13, "pages": "36-37", "head": "Global disaster deaths have nearly halved, but vulnerability and impacts are surging", "d": 1.0808}, {"rank": 16, "id": "G03-S02", "goal": 3, "pages": "14-17", "head": "Global maternal deaths fall slightly, but progress stalls in high-burden countries", "d": 1.0837}, {"rank": 17, "id": "G01-S08", "goal": 1, "pages": "10-11", "head": "Governments are spending more on essential services, but there is a 20-point gap between", "d": 1.0914}, {"rank": 18, "id": "G03-S17", "goal": 3, "pages": "14-17", "head": "More women use modern methods of contraception, and fewer adolescents give birth", "d": 1.094}, {"rank": 19, "id": "G10-S02", "goal": 10, "pages": "30-31", "head": "Less of GDP is going towards labour income, increasing the gap between workers and owner", "d": 1.095}, {"rank": 20, "id": "G02-S03", "goal": 2, "pages": "12-13", "head": "Global progress on child malnutrition is slowing, with signs of reversal", "d": 1.0957}, {"rank": 21, "id": "G10-S05", "goal": 10, "pages": "30-31", "head": "Global refugee population surges to 37.8 million", "d": 1.0961}, {"rank": 22, "id": "G16-S01", "goal": 16, "pages": "42-43", "head": "The global homicide rate is declining, but reductions are insufficient to meet the 2030 ", "d": 1.1006}, {"rank": 23, "id": "G04-S08", "goal": 4, "pages": "18-19", "head": "Gender disparities in education persist", "d": 1.113}, {"rank": 24, "id": "G03-S11", "goal": 3, "pages": "14-17", "head": "The global fight against infectious diseases shows critical gains, though global targets", "d": 1.1133}, {"rank": 25, "id": "G08-S10", "goal": 8, "pages": "26-27", "head": "Youth face persistent challenges in labour markets despite record-low unemployment", "d": 1.1154}, {"rank": 26, "id": "G02-S07", "goal": 2, "pages": "12-13", "head": "Small-scale food producers typically earn and produce less, yet they are essential for a", "d": 1.117}, {"rank": 27, "id": "G04-S01", "goal": 4, "pages": "18-19", "head": "Most countries are off track to meet education targets for access, completion and learni", "d": 1.1184}, {"rank": 28, "id": "G03-S18", "goal": 3, "pages": "14-17", "head": "More women use modern methods of contraception, and fewer adolescents give birth", "d": 1.12}, {"rank": 29, "id": "G03-S06", "goal": 3, "pages": "14-17", "head": "The global fight against infectious diseases shows critical gains, though global targets", "d": 1.122}, {"rank": 30, "id": "G01-S06", "goal": 1, "pages": "10-11", "head": "Many feel secure in their land rights, but formal documentation remains limited and uneq", "d": 1.1241}, {"rank": 31, "id": "G08-S05", "goal": 8, "pages": "26-27", "head": "Efforts to end child labour show signs of progress despite missing the 2025 target", "d": 1.1259}, {"rank": 32, "id": "G03-S16", "goal": 3, "pages": "14-17", "head": "Falling global suicide rate contrasts sharply with upward trends in some regions", "d": 1.1266}, {"rank": 33, "id": "G11-S03", "goal": 11, "pages": "32-33", "head": "Rapid urbanization calls for a focus on urban climate adaptation", "d": 1.1282}, {"rank": 34, "id": "G08-S01", "goal": 8, "pages": "26-27", "head": "Trade tensions and uncertainty are expected to dampen GDP growth in 2025", "d": 1.1307}, {"rank": 35, "id": "G10-S04", "goal": 10, "pages": "30-31", "head": "Discrimination is on the rise globally, with certain population groups bearing the brunt", "d": 1.1317}, {"rank": 36, "id": "G08-S06", "goal": 8, "pages": "26-27", "head": "Over half of the global workforce remains in informal employment, with numbers still ris", "d": 1.1368}, {"rank": 37, "id": "G06-S03", "goal": 6, "pages": "22-23", "head": "Global water and sanitation access improves, but billions remain underserved", "d": 1.1383}, {"rank": 38, "id": "G03-S07", "goal": 3, "pages": "14-17", "head": "The global fight against infectious diseases shows critical gains, though global targets", "d": 1.1384}, {"rank": 39, "id": "G05-S09", "goal": 5, "pages": "20-21", "head": "Despite progress towards gender parity for mobile phone ownership, disparities persist i", "d": 1.1416}, {"rank": 40, "id": "G03-S03", "goal": 3, "pages": "14-17", "head": "Under-5 mortality rate reveals significant gaps among the regions", "d": 1.1417}, {"rank": 41, "id": "G03-S12", "goal": 3, "pages": "14-17", "head": "Non-communicable diseases cause more than half the deaths for people under age 70", "d": 1.1448}, {"rank": 42, "id": "G03-S05", "goal": 3, "pages": "14-17", "head": "The global fight against infectious diseases shows critical gains, though global targets", "d": 1.1468}, {"rank": 43, "id": "G05-S08", "goal": 5, "pages": "20-21", "head": "Millions of women lack full decision-making power over their sexual and reproductive hea", "d": 1.149}, {"rank": 44, "id": "G06-S04", "goal": 6, "pages": "22-23", "head": "Global water and sanitation access improves, but billions remain underserved", "d": 1.149}, {"rank": 45, "id": "G02-S04", "goal": 2, "pages": "12-13", "head": "Global progress on child malnutrition is slowing, with signs of reversal", "d": 1.1501}, {"rank": 46, "id": "G03-S04", "goal": 3, "pages": "14-17", "head": "Under-5 mortality rate reveals significant gaps among the regions", "d": 1.1528}, {"rank": 47, "id": "G04-S04", "goal": 4, "pages": "18-19", "head": "Progress in early childhood education is limited and uneven across regions", "d": 1.1547}, {"rank": 48, "id": "G16-S05", "goal": 16, "pages": "42-43", "head": "Human rights defenders and journalists face alarming levels of violence in 2024", "d": 1.1553}, {"rank": 49, "id": "G16-S04", "goal": 16, "pages": "42-43", "head": "Detected trafficking victims rise sharply, with children increasingly targeted", "d": 1.1553}, {"rank": 50, "id": "G13-S08", "goal": 13, "pages": "36-37", "head": "Global disaster deaths have nearly halved, but vulnerability and impacts are surging", "d": 1.156}, {"rank": 51, "id": "G04-S05", "goal": 4, "pages": "18-19", "head": "Youth dominate educational participation while adult engagement remains low", "d": 1.1571}, {"rank": 52, "id": "G02-S09", "goal": 2, "pages": "12-13", "head": "Global agricultural investment reaches record highs, but the sector remains underfunded", "d": 1.1591}, {"rank": 53, "id": "G02-S06", "goal": 2, "pages": "12-13", "head": "Anaemia and inadequate diet diversity remain major barriers to global nutrition goals fo", "d": 1.1592}, {"rank": 54, "id": "G02-S10", "goal": 2, "pages": "12-13", "head": "Pressures ease for global food prices, but they remain triple pre-pandemic levels", "d": 1.1617}, {"rank": 55, "id": "G17-S12", "goal": 17, "pages": "44-45", "head": "Statistical capacity improves, but sustainable investment is needed across all countries", "d": 1.1617}, {"rank": 56, "id": "G11-S06", "goal": 11, "pages": "32-33", "head": "Limited civil society participation undermines inclusive urban planning", "d": 1.162}, {"rank": 57, "id": "G11-S05", "goal": 11, "pages": "32-33", "head": "Local disaster risk reduction strategies gain momentum amid mounting infrastructure thre", "d": 1.1633}, {"rank": 58, "id": "G17-S05", "goal": 17, "pages": "44-45", "head": "Official development assistance falls in 2024 after five years of consecutive growth", "d": 1.1697}, {"rank": 59, "id": "G04-S06", "goal": 4, "pages": "18-19", "head": "Steady progress in global literacy, but regional disparities persist", "d": 1.1701}, {"rank": 60, "id": "G09-S05", "goal": 9, "pages": "28-29", "head": "Access to 5G now reaches half the globe, but some have zero mobile-broadband network acc", "d": 1.171}, {"rank": 61, "id": "G04-S09", "goal": 4, "pages": "18-19", "head": "Basic school infrastructure improves globally while it lags in LDCs", "d": 1.1719}, {"rank": 62, "id": "G05-S02", "goal": 5, "pages": "20-21", "head": "Despite progress in certain countries, child marriage and female genital mutilation rema", "d": 1.1724}, {"rank": 63, "id": "G12-S04", "goal": 12, "pages": "34-35", "head": "Daily food waste from households could have provided over a billion meals", "d": 1.173}, {"rank": 64, "id": "G16-S07", "goal": 16, "pages": "42-43", "head": "One in three prisoners are held without proper sentencing as the global inmate count gro", "d": 1.1736}, {"rank": 65, "id": "G05-S01", "goal": 5, "pages": "20-21", "head": "Continuing legal reforms show progress, but gaps remain in all areas", "d": 1.1756}, {"rank": 66, "id": "G17-S09", "goal": 17, "pages": "44-45", "head": "Internet use continues to grow, but universal connectivity remains a distant prospect", "d": 1.1773}, {"rank": 67, "id": "G02-S05", "goal": 2, "pages": "12-13", "head": "Anaemia and inadequate diet diversity remain major barriers to global nutrition goals fo", "d": 1.1788}, {"rank": 68, "id": "G12-S05", "goal": 12, "pages": "34-35", "head": "Daily food waste from households could have provided over a billion meals", "d": 1.1813}, {"rank": 69, "id": "G03-S13", "goal": 3, "pages": "14-17", "head": "Non-communicable diseases cause more than half the deaths for people under age 70", "d": 1.1836}, {"rank": 70, "id": "G03-S20", "goal": 3, "pages": "14-17", "head": "Official development assistance for health sees sharp decline from pandemic peak, but re", "d": 1.1846}, {"rank": 71, "id": "G04-S07", "goal": 4, "pages": "18-19", "head": "Gender disparities in education persist", "d": 1.1855}, {"rank": 72, "id": "G11-S10", "goal": 11, "pages": "32-33", "head": "Wide gaps remain in public spending for heritage preservation", "d": 1.1865}, {"rank": 73, "id": "G05-S07", "goal": 5, "pages": "20-21", "head": "Time-use data reveal persistent gender roles and unequal distribution of care and domest", "d": 1.1867}, {"rank": 74, "id": "G08-S03", "goal": 8, "pages": "26-27", "head": "Global productivity is rebounding slowly, with persistent regional gaps", "d": 1.1901}, {"rank": 75, "id": "G16-S06", "goal": 16, "pages": "42-43", "head": "Human rights defenders and journalists face alarming levels of violence in 2024", "d": 1.1907}, {"rank": 76, "id": "G16-S02", "goal": 16, "pages": "42-43", "head": "Loss of lives amid armed conflicts surged 40 per cent in 2024; casualties among children", "d": 1.1925}, {"rank": 77, "id": "G17-S10", "goal": 17, "pages": "44-45", "head": "Internet use continues to grow, but universal connectivity remains a distant prospect", "d": 1.1943}, {"rank": 78, "id": "G07-S03", "goal": 7, "pages": "24-25", "head": "Access to clean cooking has improved, but it is far from universal", "d": 1.1944}, {"rank": 79, "id": "G10-S03", "goal": 10, "pages": "30-31", "head": "Discrimination is on the rise globally, with certain population groups bearing the brunt", "d": 1.1948}, {"rank": 80, "id": "G17-S06", "goal": 17, "pages": "44-45", "head": "Official development assistance falls in 2024 after five years of consecutive growth", "d": 1.1972}, {"rank": 81, "id": "G05-S03", "goal": 5, "pages": "20-21", "head": "Gender inequality in land ownership and weak legal protection are persistent barriers to", "d": 1.1973}, {"rank": 82, "id": "G07-S02", "goal": 7, "pages": "24-25", "head": "The past decade saw 45 countries achieving universal electricity access, but little prog", "d": 1.1986}, {"rank": 83, "id": "G08-S02", "goal": 8, "pages": "26-27", "head": "Trade tensions and uncertainty are expected to dampen GDP growth in 2025", "d": 1.1991}, {"rank": 84, "id": "G17-S01", "goal": 17, "pages": "44-45", "head": "Debt service costs for low- and middle-income countries hit a record $1.4 trillion", "d": 1.1995}, {"rank": 85, "id": "G04-S02", "goal": 4, "pages": "18-19", "head": "Most countries are off track to meet education targets for access, completion and learni", "d": 1.2013}, {"rank": 86, "id": "G09-S07", "goal": 9, "pages": "28-29", "head": "More inclusive financing is needed for small enterprises", "d": 1.2031}, {"rank": 87, "id": "G03-S08", "goal": 3, "pages": "14-17", "head": "The global fight against infectious diseases shows critical gains, though global targets", "d": 1.2048}, {"rank": 88, "id": "G08-S07", "goal": 8, "pages": "26-27", "head": "Over half of the global workforce remains in informal employment, with numbers still ris", "d": 1.208}, {"rank": 89, "id": "G17-S11", "goal": 17, "pages": "44-45", "head": "Statistical capacity improves, but sustainable investment is needed across all countries", "d": 1.2091}, {"rank": 90, "id": "G17-S07", "goal": 17, "pages": "44-45", "head": "Development finance flows increased across multiple sources", "d": 1.2103}, {"rank": 91, "id": "G09-S02", "goal": 9, "pages": "28-29", "head": "Global manufacturing growth shows progress, but with regional disparities", "d": 1.2114}, {"rank": 92, "id": "G12-S09", "goal": 12, "pages": "34-35", "head": "Global resource demand surges, outpacing population growth", "d": 1.2117}, {"rank": 93, "id": "G13-S03", "goal": 13, "pages": "36-37", "head": "Global subsidies for fossil fuels are still excessive despite drop", "d": 1.212}, {"rank": 94, "id": "G15-S03", "goal": 15, "pages": "40-41", "head": "Significant investments in restoration are needed to achieve land degradation neutrality", "d": 1.2157}, {"rank": 95, "id": "G03-S09", "goal": 3, "pages": "14-17", "head": "The global fight against infectious diseases shows critical gains, though global targets", "d": 1.216}, {"rank": 96, "id": "G15-S04", "goal": 15, "pages": "40-41", "head": "Significant investments in restoration are needed to achieve land degradation neutrality", "d": 1.2173}, {"rank": 97, "id": "G06-S11", "goal": 6, "pages": "22-23", "head": "Freshwater ecosystems are under pressure despite improved monitoring", "d": 1.2185}, {"rank": 98, "id": "G06-S01", "goal": 6, "pages": "22-23", "head": "Uneven water stress threatens global development", "d": 1.2195}, {"rank": 99, "id": "G11-S04", "goal": 11, "pages": "32-33", "head": "Rapid urbanization calls for a focus on urban climate adaptation", "d": 1.221}, {"rank": 100, "id": "G07-S06", "goal": 7, "pages": "24-25", "head": "Installed renewable energy-generating capacity is on a continuous rise, yet significant ", "d": 1.2215}, {"rank": 101, "id": "G05-S06", "goal": 5, "pages": "20-21", "head": "Less than one third of managerial positions were held by women", "d": 1.2224}, {"rank": 102, "id": "G08-S11", "goal": 8, "pages": "26-27", "head": "Continued erosion of compliance with labour rights undermines progress towards decent-wo", "d": 1.2226}, {"rank": 103, "id": "G03-S14", "goal": 3, "pages": "14-17", "head": "Global tobacco and alcohol use is declining, but still cause immense health, economic an", "d": 1.2263}, {"rank": 104, "id": "G01-S07", "goal": 1, "pages": "10-11", "head": "Many feel secure in their land rights, but formal documentation remains limited and uneq", "d": 1.23}, {"rank": 105, "id": "G08-S08", "goal": 8, "pages": "26-27", "head": "Tourism recovery gains ground but disparities persist", "d": 1.2311}, {"rank": 106, "id": "G10-S08", "goal": 10, "pages": "30-31", "head": "Resource flows for developing countries increase, with official development assistance m", "d": 1.232}, {"rank": 107, "id": "G17-S02", "goal": 17, "pages": "44-45", "head": "Debt service costs for low- and middle-income countries hit a record $1.4 trillion", "d": 1.2337}, {"rank": 108, "id": "G16-S08", "goal": 16, "pages": "42-43", "head": "One in three prisoners are held without proper sentencing as the global inmate count gro", "d": 1.2356}, {"rank": 109, "id": "G11-S08", "goal": 11, "pages": "32-33", "head": "Despite progress in national urban policies, financing at the local level lags behind", "d": 1.2369}, {"rank": 110, "id": "G06-S06", "goal": 6, "pages": "22-23", "head": "Irregular monitoring leads to critical knowledge gaps about factors affecting water qual", "d": 1.2377}, {"rank": 111, "id": "G15-S05", "goal": 15, "pages": "40-41", "head": "All major species groups are in decline on the Red List Index", "d": 1.2384}, {"rank": 112, "id": "G02-S08", "goal": 2, "pages": "12-13", "head": "Global agricultural investment reaches record highs, but the sector remains underfunded", "d": 1.2405}, {"rank": 113, "id": "G03-S10", "goal": 3, "pages": "14-17", "head": "The global fight against infectious diseases shows critical gains, though global targets", "d": 1.2423}, {"rank": 114, "id": "G09-S06", "goal": 9, "pages": "28-29", "head": "Despite global growth in research capacity, certain regions are left behind", "d": 1.248}, {"rank": 115, "id": "G08-S04", "goal": 8, "pages": "26-27", "head": "Global productivity is rebounding slowly, with persistent regional gaps", "d": 1.2501}, {"rank": 116, "id": "G12-S06", "goal": 12, "pages": "34-35", "head": "Despite record levels of e-waste, only a fraction is disposed of responsibly", "d": 1.2502}, {"rank": 117, "id": "G17-S08", "goal": 17, "pages": "44-45", "head": "Development finance flows increased across multiple sources", "d": 1.2503}, {"rank": 118, "id": "G04-S03", "goal": 4, "pages": "18-19", "head": "Internet use is common in higher-income countries, but many lack basic digital skills", "d": 1.2508}, {"rank": 119, "id": "G14-S08", "goal": 14, "pages": "38-39", "head": "From treaties to tools, countries intensify response to illegal, unreported and unregula", "d": 1.2509}, {"rank": 120, "id": "G03-S15", "goal": 3, "pages": "14-17", "head": "Global tobacco and alcohol use is declining, but still cause immense health, economic an", "d": 1.2513}, {"rank": 121, "id": "G12-S08", "goal": 12, "pages": "34-35", "head": "Global resource demand surges, outpacing population growth", "d": 1.2523}, {"rank": 122, "id": "G08-S09", "goal": 8, "pages": "26-27", "head": "Tourism recovery gains ground but disparities persist", "d": 1.2529}, {"rank": 123, "id": "G06-S07", "goal": 6, "pages": "22-23", "head": "Water-use efficiency improves globally, but regional gaps persist", "d": 1.2534}, {"rank": 124, "id": "G11-S07", "goal": 11, "pages": "32-33", "head": "Rapid urban expansion necessitates better coverage of municipal solid waste collection", "d": 1.2538}, {"rank": 125, "id": "G07-S08", "goal": 7, "pages": "24-25", "head": "International financial flows continue to rebound, but remain short of 2016 peaks", "d": 1.256}, {"rank": 126, "id": "G06-S08", "goal": 6, "pages": "22-23", "head": "Water-use efficiency improves globally, but regional gaps persist", "d": 1.2561}, {"rank": 127, "id": "G06-S02", "goal": 6, "pages": "22-23", "head": "Uneven water stress threatens global development", "d": 1.2567}, {"rank": 128, "id": "G13-S05", "goal": 13, "pages": "36-37", "head": "Warming reaches alarming levels as 2024 breaks heat records – yet again", "d": 1.2612}, {"rank": 129, "id": "G09-S03", "goal": 9, "pages": "28-29", "head": "Global manufacturing growth shows progress, but with regional disparities", "d": 1.2635}, {"rank": 130, "id": "G12-S01", "goal": 12, "pages": "34-35", "head": "Rising number of countries implement sustainability policies and procurement reporting", "d": 1.2647}, {"rank": 131, "id": "G06-S14", "goal": 6, "pages": "22-23", "head": "Slow progress is seen for integrated water resources management, with insufficient finan", "d": 1.2654}, {"rank": 132, "id": "G15-S01", "goal": 15, "pages": "40-41", "head": "Shifting forest trends show progress and setbacks to halt deforestation", "d": 1.2677}, {"rank": 133, "id": "G10-S06", "goal": 10, "pages": "30-31", "head": "Remittance costs remain stubbornly high, far exceeding SDG target", "d": 1.2677}, {"rank": 134, "id": "G11-S09", "goal": 11, "pages": "32-33", "head": "Despite progress in national urban policies, financing at the local level lags behind", "d": 1.2679}, {"rank": 135, "id": "G15-S09", "goal": 15, "pages": "40-41", "head": "Upward trend observed in biodiversity-related official development finance", "d": 1.2715}, {"rank": 136, "id": "G17-S03", "goal": 17, "pages": "44-45", "head": "Share of developing countries in global trade remains stagnant since 2015", "d": 1.2739}, {"rank": 137, "id": "G03-S19", "goal": 3, "pages": "14-17", "head": "Vaccine delivery systems have not fully rebounded post-pandemic, making global targets u", "d": 1.2747}, {"rank": 138, "id": "G15-S02", "goal": 15, "pages": "40-41", "head": "Shifting forest trends show progress and setbacks to halt deforestation", "d": 1.2756}, {"rank": 139, "id": "G05-S04", "goal": 5, "pages": "20-21", "head": "2024’s super election did little for gender parity in politics, revealing the need for b", "d": 1.2769}, {"rank": 140, "id": "G07-S07", "goal": 7, "pages": "24-25", "head": "Installed renewable energy-generating capacity is on a continuous rise, yet significant ", "d": 1.2812}, {"rank": 141, "id": "G13-S06", "goal": 13, "pages": "36-37", "head": "Warming reaches alarming levels as 2024 breaks heat records – yet again", "d": 1.2817}, {"rank": 142, "id": "G06-S13", "goal": 6, "pages": "22-23", "head": "Slow progress is seen for integrated water resources management, with insufficient finan", "d": 1.2833}, {"rank": 143, "id": "G13-S02", "goal": 13, "pages": "36-37", "head": "Record emissions underscore the urgency of 2025 climate commitments", "d": 1.2845}, {"rank": 144, "id": "G15-S06", "goal": 15, "pages": "40-41", "head": "All major species groups are in decline on the Red List Index", "d": 1.2867}, {"rank": 145, "id": "G17-S04", "goal": 17, "pages": "44-45", "head": "Share of developing countries in global trade remains stagnant since 2015", "d": 1.2893}, {"rank": 146, "id": "G13-S10", "goal": 13, "pages": "36-37", "head": "Mainstreaming climate change concepts in education is still a work in progress", "d": 1.2932}, {"rank": 147, "id": "G14-S01", "goal": 14, "pages": "38-39", "head": "Sustainability challenges persist, but new data show effective management drives progres", "d": 1.2979}, {"rank": 148, "id": "G06-S05", "goal": 6, "pages": "22-23", "head": "Irregular monitoring leads to critical knowledge gaps about factors affecting water qual", "d": 1.3006}, {"rank": 149, "id": "G13-S09", "goal": 13, "pages": "36-37", "head": "Mainstreaming climate change concepts in education is still a work in progress", "d": 1.3082}, {"rank": 150, "id": "G07-S05", "goal": 7, "pages": "24-25", "head": "Energy intensity progress accelerated in 2022 partly due to energy crisis, but the world", "d": 1.3084}, {"rank": 151, "id": "G09-S04", "goal": 9, "pages": "28-29", "head": "Global manufacturing growth shows progress, but with regional disparities", "d": 1.31}, {"rank": 152, "id": "G14-S06", "goal": 14, "pages": "38-39", "head": "Ocean acidification is a rising global threat with diverse regional and local consequenc", "d": 1.3121}, {"rank": 153, "id": "G12-S03", "goal": 12, "pages": "34-35", "head": "Sustainability reporting is now a standard for the largest companies", "d": 1.3128}, {"rank": 154, "id": "G14-S10", "goal": 14, "pages": "38-39", "head": "States are moving beyond policy formulation and into implementation of integrated ocean ", "d": 1.3165}, {"rank": 155, "id": "G14-S05", "goal": 14, "pages": "38-39", "head": "Oceans reach record heat as coral bleaching crisis continues to unfold", "d": 1.3171}, {"rank": 156, "id": "G09-S01", "goal": 9, "pages": "28-29", "head": "Developing countries handle the majority of world maritime freight volumes", "d": 1.318}, {"rank": 157, "id": "G15-S07", "goal": 15, "pages": "40-41", "head": "Average protection of KBAs has nearly doubled, but most remain at risk", "d": 1.3205}, {"rank": 158, "id": "G12-S02", "goal": 12, "pages": "34-35", "head": "Rising number of countries implement sustainability policies and procurement reporting", "d": 1.3216}, {"rank": 159, "id": "G14-S07", "goal": 14, "pages": "38-39", "head": "Ocean acidification is a rising global threat with diverse regional and local consequenc", "d": 1.332}, {"rank": 160, "id": "G13-S04", "goal": 13, "pages": "36-37", "head": "Global subsidies for fossil fuels are still excessive despite drop", "d": 1.3346}, {"rank": 161, "id": "G13-S01", "goal": 13, "pages": "36-37", "head": "Record emissions underscore the urgency of 2025 climate commitments", "d": 1.335}, {"rank": 162, "id": "G06-S10", "goal": 6, "pages": "22-23", "head": "Proven benefits of transboundary water cooperation need wider implementation", "d": 1.337}, {"rank": 163, "id": "G16-S03", "goal": 16, "pages": "42-43", "head": "Strengthening institutions for inclusive governance shows progress, but deep gaps remain", "d": 1.3374}, {"rank": 164, "id": "G10-S07", "goal": 10, "pages": "30-31", "head": "Remittance costs remain stubbornly high, far exceeding SDG target", "d": 1.3389}, {"rank": 165, "id": "G06-S09", "goal": 6, "pages": "22-23", "head": "Proven benefits of transboundary water cooperation need wider implementation", "d": 1.3411}, {"rank": 166, "id": "G05-S05", "goal": 5, "pages": "20-21", "head": "2024’s super election did little for gender parity in politics, revealing the need for b", "d": 1.3447}, {"rank": 167, "id": "G14-S04", "goal": 14, "pages": "38-39", "head": "Oceans reach record heat as coral bleaching crisis continues to unfold", "d": 1.3452}, {"rank": 168, "id": "G14-S03", "goal": 14, "pages": "38-39", "head": "Oceans reach record heat as coral bleaching crisis continues to unfold", "d": 1.3473}, {"rank": 169, "id": "G12-S07", "goal": 12, "pages": "34-35", "head": "Despite record levels of e-waste, only a fraction is disposed of responsibly", "d": 1.3519}, {"rank": 170, "id": "G15-S08", "goal": 15, "pages": "40-41", "head": "Average protection of KBAs has nearly doubled, but most remain at risk", "d": 1.3538}, {"rank": 171, "id": "G14-S11", "goal": 14, "pages": "38-39", "head": "States are moving beyond policy formulation and into implementation of integrated ocean ", "d": 1.3558}, {"rank": 172, "id": "G07-S04", "goal": 7, "pages": "24-25", "head": "Global energy consumption is increasingly supported by renewables, but more is needed to", "d": 1.3587}, {"rank": 173, "id": "G06-S12", "goal": 6, "pages": "22-23", "head": "Freshwater ecosystems are under pressure despite improved monitoring", "d": 1.3689}, {"rank": 174, "id": "G14-S09", "goal": 14, "pages": "38-39", "head": "From treaties to tools, countries intensify response to illegal, unreported and unregula", "d": 1.3834}, {"rank": 175, "id": "G14-S02", "goal": 14, "pages": "38-39", "head": "Sustainability challenges persist, but new data show effective management drives progres", "d": 1.3836}, {"rank": 176, "id": "G12-S10", "goal": 12, "pages": "34-35", "head": "Global cooperation enhances transparency on hazardous waste and chemicals", "d": 1.4104}], "dmin": 0.7861, "dmed": 1.2086, "dmax": 1.4104};
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ② 1차원 */
+let a1 = 3, b1 = 7;
+(() => {
+  const box = document.getElementById('line1');
+  for (let i = 0; i <= 10; i++) {
+    const X = 5 + i / 10 * 90;
+    const t = document.createElement('div'); t.className = 'tick'; t.style.left = X + '%';
+    const l = document.createElement('div'); l.className = 'tl2'; l.style.left = X + '%'; l.textContent = i;
+    box.appendChild(t); box.appendChild(l);
+  }
+  function grab(el, set) {
+    el.addEventListener('pointerdown', ev0 => {
+      el.setPointerCapture(ev0.pointerId);
+      const move = ev => {
+        const r = box.getBoundingClientRect();
+        let v = ((ev.clientX - r.left) / r.width * 100 - 5) / 90 * 10;
+        set(Math.max(0, Math.min(10, Math.round(v * 2) / 2))); draw1();
+      };
+      const up = () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); };
+      el.addEventListener('pointermove', move); el.addEventListener('pointerup', up);
+    });
+  }
+  grab(document.getElementById('l1a'), v => a1 = v);
+  grab(document.getElementById('l1b'), v => b1 = v);
+})();
+function draw1() {
+  const X = v => 5 + v / 10 * 90;
+  document.getElementById('l1a').style.left = X(a1) + '%';
+  document.getElementById('l1b').style.left = X(b1) + '%';
+  const lo = Math.min(a1, b1), hi = Math.max(a1, b1);
+  const sp = document.getElementById('l1span');
+  sp.style.left = X(lo) + '%'; sp.style.width = (X(hi) - X(lo)) + '%';
+  const lab = document.getElementById('l1lab');
+  lab.style.left = ((X(lo) + X(hi)) / 2) + '%';
+  lab.textContent = L('거리 ', 'distance ') + Math.abs(a1 - b1).toFixed(1);
+  document.getElementById('f1').innerHTML =
+    'd <span class="op">=</span> | <span style="color:var(--teal-soft)">' + a1.toFixed(1)
+    + '</span> <span class="op">−</span> <span style="color:var(--cinnabar-soft)">' + b1.toFixed(1)
+    + '</span> | <span class="op">=</span> <span class="hl">' + Math.abs(a1 - b1).toFixed(1) + '</span>';
+}
+
+/* ③ 2차원 */
+let pA = {x: .25, y: .35}, pB = {x: .7, y: .72};
+(() => {
+  const box = document.getElementById('plane');
+  function grab(el, p) {
+    el.addEventListener('pointerdown', ev0 => {
+      el.setPointerCapture(ev0.pointerId);
+      const move = ev => {
+        const r = box.getBoundingClientRect();
+        p.x = Math.max(.04, Math.min(.96, (ev.clientX - r.left) / r.width));
+        p.y = Math.max(.06, Math.min(.94, 1 - (ev.clientY - r.top) / r.height));
+        draw2();
+      };
+      const up = () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); };
+      el.addEventListener('pointermove', move); el.addEventListener('pointerup', up);
+    });
+  }
+  grab(document.getElementById('pa'), pA);
+  grab(document.getElementById('pb'), pB);
+  window.addEventListener('resize', draw2);
+})();
+function draw2() {
+  const box = document.getElementById('plane'), svg = document.getElementById('psvg');
+  const A = document.getElementById('pa'), B = document.getElementById('pb');
+  A.style.left = pA.x * 100 + '%'; A.style.top = (1 - pA.y) * 100 + '%';
+  B.style.left = pB.x * 100 + '%'; B.style.top = (1 - pB.y) * 100 + '%';
+  const r = box.getBoundingClientRect();
+  const ax = pA.x * r.width, ay = (1 - pA.y) * r.height;
+  const bx = pB.x * r.width, by = (1 - pB.y) * r.height;
+  svg.innerHTML =
+    '<line x1="' + ax + '" y1="' + ay + '" x2="' + bx + '" y2="' + ay + '" stroke="#6fc0b0" stroke-width="2" stroke-dasharray="5 4"/>'
+    + '<line x1="' + bx + '" y1="' + ay + '" x2="' + bx + '" y2="' + by + '" stroke="#d97757" stroke-width="2" stroke-dasharray="5 4"/>'
+    + '<line x1="' + ax + '" y1="' + ay + '" x2="' + bx + '" y2="' + by + '" stroke="#c9a86a" stroke-width="2.5"/>';
+  const dx = (pB.x - pA.x) * 10, dy = (pB.y - pA.y) * 10;
+  const dd = Math.sqrt(dx * dx + dy * dy);
+  document.getElementById('f2').innerHTML =
+    'd <span class="op">=</span> <span class="big">√</span><span class="op">(</span>'
+    + '<span style="color:var(--teal-soft)">' + dx.toFixed(2) + '</span>²'
+    + ' <span class="op">+</span> <span style="color:var(--cinnabar-soft)">' + dy.toFixed(2) + '</span>²'
+    + '<span class="op">)</span> <span class="op">=</span> <span class="big">√</span><span class="op">(</span>'
+    + (dx * dx).toFixed(2) + ' <span class="op">+</span> ' + (dy * dy).toFixed(2)
+    + '<span class="op">)</span> <span class="op">=</span> <span class="hl">' + dd.toFixed(3) + '</span>';
+  document.getElementById('cap2').innerHTML =
+    L('<span class="tl">청록</span>은 가로차, <span class="cin">주홍</span>은 세로차, <span class="gd">금색</span>이 우리가 구하는 거리다',
+      '<span class="tl">Teal</span> is the horizontal gap, <span class="cin">red</span> the vertical, '
+      + '<span class="gd">gold</span> the distance we are after');
+}
+
+/* ④ 384차원 스테퍼 */
+let k = 0, stepTimer = null;
+(() => {
+  const T2 = D.top, bars = document.getElementById('bars');
+  bars.innerHTML = T2.terms.map((t, i) =>
+    '<div class="b' + (T2.big.includes(i) ? ' big' : '') + '" style="height:0px"></div>').join('');
+  document.getElementById('stepBtn').addEventListener('click', () => {
+    clearInterval(stepTimer); if (k < D.dim) { k++; drawStep(); }
+  });
+  document.getElementById('fastBtn').addEventListener('click', () => {
+    clearInterval(stepTimer);
+    stepTimer = setInterval(() => {
+      if (k >= D.dim) clearInterval(stepTimer);
+      else { k = Math.min(k + 3, D.dim); drawStep(); }
+    }, 22);
+  });
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    clearInterval(stepTimer); k = 0; drawStep();
+  });
+})();
+function drawStep() {
+  const T2 = D.top, tbl = document.getElementById('terms');
+  const barEls = document.querySelectorAll('#bars .b');
+  const maxS = Math.max(...T2.terms.map(t => t.s));
+  const rows = [];
+  for (let i = Math.max(0, k - 6); i < Math.min(k + 1, D.dim); i++) {
+    const t = T2.terms[i];
+    rows.push('<tr' + (i === k - 1 ? ' class="now"' : '') + '>'
+      + '<td>' + t.k + L('번 축', '') + '</td>'
+      + '<td>' + t.c.toFixed(4) + '</td><td>' + t.q.toFixed(4) + '</td>'
+      + '<td>' + (t.d >= 0 ? '+' : '') + t.d.toFixed(4) + '</td>'
+      + '<td class="s">' + t.s.toFixed(6) + '</td>'
+      + '<td>' + T2.cum[i].toFixed(6) + '</td></tr>');
+  }
+  tbl.innerHTML = '<tr><th>' + L('차원', 'dim') + '</th><th>' + L('청크', 'chunk') + '</th>'
+    + '<th>' + L('질문', 'query') + '</th><th>' + L('차이', 'diff') + '</th>'
+    + '<th>' + L('차이²', 'diff²') + '</th><th>' + L('누적합', 'running sum') + '</th></tr>'
+    + rows.join('')
+    + (k >= D.dim ? '<tr class="sumrow"><td colspan="4">'
+        + L(D.dim + '항 전부 더하면', 'summing all ' + D.dim + ' terms')
+        + '</td><td class="s">' + T2.sum.toFixed(6) + '</td><td>√ = ' + T2.dist.toFixed(4) + '</td></tr>' : '');
+  for (let i = 0; i < D.dim; i++)
+    barEls[i].style.height = (i < k ? T2.terms[i].s / maxS * 90 : 0) + 'px';
+  document.getElementById('prog').style.width = (k / D.dim * 100) + '%';
+  document.getElementById('stepLbl').textContent =
+    k + ' / ' + D.dim + (k >= D.dim ? L(' · 완료', ' · done') : '');
+  const note = document.getElementById('finalNote');
+  note.style.display = k >= D.dim ? '' : 'none';
+  note.innerHTML = L(
+    D.dim + '개 항을 모두 더하니 <b>' + T2.sum.toFixed(6) + '</b>, 제곱근을 취하면 <b>'
+      + T2.dist.toFixed(4) + '</b>. 이것이 질문과 <code>' + T2.id + '</code> 사이의 거리다.',
+    'All ' + D.dim + ' terms come to <b>' + T2.sum.toFixed(6) + '</b>; the square root is <b>'
+      + T2.dist.toFixed(4) + '</b>. That is the distance between the query and <code>'
+      + T2.id + '</code>.');
+}
+
+/* ⑥ 순위표 */
+let showN = 10;
+(() => {
+  document.getElementById('bTop').addEventListener('click', () => {
+    showN = 10;
+    document.getElementById('bTop').classList.add('on');
+    document.getElementById('bAll').classList.remove('on');
+    drawRank();
+  });
+  document.getElementById('bAll').addEventListener('click', () => {
+    showN = D.n;
+    document.getElementById('bAll').classList.add('on');
+    document.getElementById('bTop').classList.remove('on');
+    drawRank();
+  });
+})();
+function drawRank() {
+  const mn = D.dmin, mx = D.dmax;
+  document.getElementById('rank').innerHTML =
+    '<tr><th>' + L('순위', 'rank') + '</th><th>' + L('거리', 'distance') + '</th>'
+    + '<th>' + L('청크', 'chunk') + '</th><th>' + L('소제목', 'subsection') + '</th></tr>'
+    + D.ranking.slice(0, showN).map(r =>
+      '<tr' + (r.rank <= 3 ? ' class="top3"' : '') + '>'
+      + '<td class="n">' + r.rank + '</td><td class="d">' + r.d.toFixed(4) + '</td>'
+      + '<td class="i">' + r.id + '</td>'
+      + '<td>' + esc(r.head) + '<span class="bar" style="width:'
+      + ((r.d - mn) / (mx - mn) * 100).toFixed(1) + '%"></span>'
+      + '<span style="color:var(--paper-faint);font-size:.86rem"> Goal ' + r.goal
+      + ' · pp. ' + r.pages + '</span></td></tr>').join('');
+}
+
+function renderLabels() {
+  document.getElementById('stepBtnL').textContent = L('한 항씩', 'one term');
+  document.getElementById('fastBtnL').textContent = L('끝까지', 'run to the end');
+  document.getElementById('resetBtnL').textContent = L('처음부터', 'restart');
+  document.getElementById('capBars').innerHTML = L(
+    '항마다의 차이² · <span class="cin">주홍</span>은 특히 크게 벌어진 차원 — 두 벡터가 그 축에서 많이 다르다는 뜻이다',
+    'The squared difference at each term · <span class="cin">red</span> marks the widest gaps — '
+    + 'the axes where the two vectors most disagree');
+  document.getElementById('showLbl').textContent = L('표시', 'Show');
+  document.getElementById('bTop').textContent = L('상위 10개', 'top 10');
+  document.getElementById('bAll').textContent = L(D.n + '개 전부', 'all ' + D.n);
+  if (showN !== 10) document.getElementById('bAll').classList.add('on');
+}
+
+function renderAll() { draw1(); draw2(); drawStep(); drawRank(); renderLabels(); }
+renderAll();
+onLangChange(renderAll);
+</script>
+</body>
+</html>
