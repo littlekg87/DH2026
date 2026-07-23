@@ -26,6 +26,14 @@ Kunha Kim will give a total of **three presentations**:
 3. **Long Paper** (Jul 30 / 11:00–12:30 / S029 / Room 104)
    *A Distant Reading of the Bulletin of Korean Historical Studies: Temporal Consciousness in Korean Historiographical Publications*
 
+### Other Activities
+
+1. **Co-authored Presentation** (Jul 31 / 14:00–15:30 / S024 / Room 107)
+   *Bibliographic Data as a Primary Source—A Case Study of Scholarly Communication in Modern Korean Historiography (1930s–Present) from the Bulletin for Korean Historical Studies*
+   Presenter: **Song, Chiyoung**
+
+2. **Session Chair** (Jul 30 / 16:30–18:00 / S107 / Room 204–205)
+
 ### Contact
 
 **Kunha Kim** · Sogang University · **littlekg87@gmail.com**
