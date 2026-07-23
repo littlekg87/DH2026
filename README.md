@@ -64,6 +64,7 @@ Any co-work, welcome!
    발표자: **Song, Chiyoung**
 
 2. **세션 Chair** (7.30 / 16:30–18:00 / S107 / Room 204–205)
+
 ### 문의
 
 **김근하(Kunha Kim)** · 서강대학교 · **littlekg87@gmail.com**
