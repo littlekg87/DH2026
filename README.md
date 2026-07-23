@@ -57,6 +57,13 @@ Any co-work, welcome!
 3. **Long paper** (7.30 / 11:00–12:30 / S029 / Room 104)
    *A Distant Reading of the Bulletin of Korean Historical Studies: Temporal Consciousness in Korean Historiographical Publications*
 
+### 기타
+
+1. **공동연구 발표** (7.31 / 14:00–15:30 / S024 / Room 107)
+   *Bibliographic Data as a Primary Source—A Case Study of Scholarly Communication in Modern Korean Historiography (1930s–Present) from the Bulletin for Korean Historical Studies*
+   발표자: **Song, Chiyoung**
+
+2. **세션 Chair** (7.30 / 16:30–18:00 / S107 / Room 204–205)
 ### 문의
 
 **김근하(Kunha Kim)** · 서강대학교 · **littlekg87@gmail.com**
