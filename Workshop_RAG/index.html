@@ -158,38 +158,41 @@
   .talklist.show .talk .tk-note{max-height:9em;opacity:1;margin-top:12px}
   .talk .tk-note::before{content:"→ ";color:var(--teal);font-family:var(--mono)}
 
-  /* ───── 시작 안내 (1쪽) — 최초 접속 공지 ───── */
-  #welcome .wk-kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--cinnabar-soft)}
-  #welcome .wk-title{font-family:var(--serif);font-weight:700;font-size:clamp(1.5rem,4vw,2.4rem);color:var(--paper);line-height:1.25;margin-top:14px}
-  #welcome .wk-sub{display:block;font-family:var(--sans);font-size:.6em;font-weight:400;color:var(--paper-dim);margin-top:9px;letter-spacing:.01em}
+  /* ───── 시작 안내 (1쪽) — 최초 접속 공지. 여백 줄이고 크게 ───── */
+  #welcome{padding:54px 4vw 58px}
+  #welcome .inner{max-width:1300px}
+  #welcome .wk-kicker{font-family:var(--mono);font-size:.9rem;letter-spacing:.2em;text-transform:uppercase;color:var(--cinnabar-soft)}
+  #welcome .wk-title{font-family:var(--serif);font-weight:700;font-size:clamp(2.1rem,5.4vw,3.6rem);color:var(--paper);line-height:1.2;margin-top:18px}
+  #welcome .wk-sub{display:block;font-family:var(--sans);font-size:.5em;font-weight:400;color:var(--paper-dim);margin-top:13px;letter-spacing:.01em}
   #welcome .access{
-    display:flex;gap:30px;align-items:center;flex-wrap:wrap;
-    margin-top:36px;padding:28px 32px;
+    container-type:inline-size;
+    display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px 28px;
+    margin-top:40px;padding:26px 30px;
     border:1px solid var(--line);border-left:4px solid var(--cinnabar);
     border-radius:14px;background:var(--ink-2);
   }
-  #welcome .access .qr{flex-shrink:0;width:130px;height:130px;padding:10px;border-radius:10px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.14)}
+  #welcome .access .ac-body{order:1;min-width:200px}
+  #welcome .access .qr{order:2;flex-shrink:0;width:150px;height:150px;padding:10px;border-radius:10px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.14)}
   #welcome .access .qr svg{display:block;width:100%;height:100%}
-  #welcome .access .ac-body{flex:1;min-width:250px}
-  #welcome .access .ac-lbl{font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--paper-faint)}
+  #welcome .access .ac-lbl{font-family:var(--mono);font-size:.92rem;letter-spacing:.08em;text-transform:uppercase;color:var(--paper-faint)}
   #welcome .access .url{
-    display:inline-block;margin-top:9px;
+    order:3;flex-basis:100%;
     font-family:var(--mono);font-weight:700;
-    font-size:clamp(1.5rem,5vw,3rem);line-height:1.12;
-    color:var(--cinnabar-soft);text-decoration:none;word-break:break-all;
+    font-size:clamp(.8rem,5cqw,4.4rem);line-height:1.1;white-space:nowrap;
+    color:var(--cinnabar-soft);text-decoration:none;
     border-bottom:2px solid transparent;transition:border-color .16s ease;
   }
   #welcome .access .url:hover{border-bottom-color:var(--cinnabar-soft)}
-  #welcome .steps{margin-top:34px;display:flex;flex-direction:column;gap:16px}
-  #welcome .wstep{display:flex;gap:18px;align-items:flex-start}
+  #welcome .steps{margin-top:38px;display:flex;flex-direction:column;gap:18px}
+  #welcome .wstep{display:flex;gap:20px;align-items:flex-start}
   #welcome .wstep .wn{
-    flex-shrink:0;width:34px;height:34px;border-radius:50%;
+    flex-shrink:0;width:42px;height:42px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
-    font-family:var(--mono);font-size:.95rem;font-weight:700;
+    font-family:var(--mono);font-size:1.15rem;font-weight:700;
     color:var(--teal-soft);border:1.5px solid var(--teal);
   }
-  #welcome .wstep .wt{font-size:1.08rem;color:var(--paper);line-height:1.65;padding-top:3px}
-  #welcome .wstep .kw{font-family:var(--mono);color:var(--cinnabar-soft);font-weight:700;border:1px solid var(--line);background:var(--ink-3);padding:1px 7px;border-radius:5px;font-size:.9em}
+  #welcome .wstep .wt{font-size:1.3rem;color:var(--paper);line-height:1.55;padding-top:7px}
+  #welcome .wstep .kw{font-family:var(--mono);color:var(--cinnabar-soft);font-weight:700;border:1px solid var(--line);background:var(--ink-3);padding:1px 8px;border-radius:5px;font-size:.88em}
 
   /* STEP big number */
   .stephead{display:flex;align-items:flex-start;gap:26px;margin-bottom:8px}
@@ -973,8 +976,8 @@
           <div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 35 35" class="segno" role="img" aria-label="GitHub repository QR code" shape-rendering="crispEdges"><path fill="#fff" d="M0 0h35v35h-35z"/><path class="qrline" stroke="#12131a" d="M3 3.5h7m1 0h3m2 0h5m4 0h7m-29 1h1m5 0h1m1 0h2m1 0h4m4 0h2m1 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m1 0h4m1 0h1m4 0h3m1 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m2 0h1m1 0h2m1 0h1m2 0h1m4 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h2m2 0h3m3 0h2m2 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m2 0h2m2 0h2m1 0h2m2 0h1m1 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-20 1h1m1 0h2m1 0h2m2 0h3m-21 1h1m2 0h7m1 0h5m1 0h1m3 0h1m2 0h1m1 0h3m-29 1h1m1 0h1m4 0h1m2 0h3m1 0h3m1 0h2m1 0h1m1 0h2m1 0h2m-28 1h3m3 0h1m1 0h1m1 0h1m3 0h2m1 0h1m2 0h1m2 0h2m1 0h1m-22 1h1m3 0h1m1 0h2m1 0h1m1 0h2m2 0h4m1 0h1m2 0h1m-26 1h1m2 0h1m5 0h4m4 0h1m1 0h2m4 0h1m-28 1h1m3 0h1m1 0h3m5 0h1m1 0h2m3 0h7m-29 1h1m4 0h2m2 0h4m1 0h9m1 0h1m1 0h1m1 0h1m-29 1h1m2 0h3m4 0h1m2 0h4m2 0h1m3 0h2m1 0h1m1 0h1m-29 1h1m1 0h2m1 0h2m1 0h1m1 0h2m3 0h2m2 0h3m3 0h1m-26 1h3m4 0h1m2 0h1m1 0h1m2 0h5m4 0h1m1 0h2m-28 1h7m1 0h1m1 0h1m2 0h4m2 0h1m4 0h2m2 0h1m-29 1h2m1 0h1m7 0h3m5 0h1m2 0h1m2 0h2m-27 1h2m1 0h2m1 0h1m2 0h5m2 0h3m1 0h8m-20 1h2m1 0h1m1 0h1m3 0h1m2 0h1m3 0h2m-26 1h7m1 0h1m1 0h1m1 0h2m1 0h1m1 0h4m1 0h1m1 0h2m-26 1h1m5 0h1m1 0h2m1 0h1m1 0h1m3 0h4m3 0h1m3 0h1m-29 1h1m1 0h3m1 0h1m1 0h3m1 0h2m1 0h2m1 0h8m2 0h1m-29 1h1m1 0h3m1 0h1m1 0h7m1 0h1m4 0h1m6 0h1m-29 1h1m1 0h3m1 0h1m3 0h3m1 0h2m1 0h1m2 0h2m1 0h2m1 0h3m-29 1h1m5 0h1m5 0h2m1 0h1m6 0h2m1 0h2m1 0h1m-29 1h7m1 0h2m1 0h2m5 0h3m1 0h1m1 0h1"/></svg></div>
           <div class="ac-body">
             <div class="ac-lbl"><span lang="ko">먼저 이 주소로 접속하세요</span><span lang="en">Start here — open this address</span></div>
-            <a class="url" href="https://github.com/littlekg87/DH2026" target="_blank" rel="noopener">github.com/littlekg87/DH2026</a>
           </div>
+          <a class="url" href="https://github.com/littlekg87/DH2026" target="_blank" rel="noopener">github.com/littlekg87/DH2026</a>
         </div>
 
         <div class="steps">
