@@ -1338,16 +1338,6 @@
           <a href="#step10"><div class="jn">10</div><div class="jt"><span lang="ko">생성 + 전거 (before/after)</span><span lang="en">Generation + provenance (before/after)</span></div></a>
         </div>
 
-        <div class="prep">
-          <div class="pt"><span lang="ko">시작 전 준비 · 1분</span><span lang="en">Before we start · 1 minute</span></div>
-          <ol>
-            <li><span lang="ko">공유 Google Drive 폴더를 <code>내 드라이브</code>에 <strong>바로가기 추가</strong> (다운로드 아님, 포인터만)</span><span lang="en"><strong>Add a shortcut</strong> to the shared Google Drive folder in <code>My Drive</code> (not a download — just a pointer)</span>
-              <a class="plink" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/Workshop_procedure.md" target="_blank" rel="noopener"><span class="pl-t">→ <span lang="ko">구글 드라이브 추가 방법</span><span lang="en">How to add the Google Drive shortcut</span></span><span class="pl-u">github.com/littlekg87/DH2026/…/Workshop_procedure.md</span></a>
-            </li>
-            <li><span lang="ko">Colab 런타임을 <code>T4 GPU</code>로 설정 — 생성 모델 Qwen3에 필요</span><span lang="en">Set the Colab runtime to <code>T4 GPU</code> — required by the Qwen3 generation model</span></li>
-          </ol>
-        </div>
-
         <div class="stackgrid">
           <div class="stackcard"><div class="sk"><span lang="ko">런타임</span><span lang="en">Runtime</span></div><div class="sv">Colab · GPU</div><div class="sd">T4</div></div>
           <div class="stackcard"><div class="sk"><span lang="ko">프레임워크</span><span lang="en">Framework</span></div><div class="sv">LangChain</div></div>
@@ -1422,6 +1412,17 @@
             <h2><span lang="ko">환경설정 · 자산준비</span><span lang="en">Setup · asset preparation</span></h2>
           </div>
         </div>
+
+        <div class="prep">
+          <div class="pt"><span lang="ko">시작 전 준비 · 1분</span><span lang="en">Before we start · 1 minute</span></div>
+          <ol>
+            <li><span lang="ko">공유 Google Drive 폴더를 <code>내 드라이브</code>에 <strong>바로가기 추가</strong> (다운로드 아님, 포인터만)</span><span lang="en"><strong>Add a shortcut</strong> to the shared Google Drive folder in <code>My Drive</code> (not a download — just a pointer)</span>
+              <a class="plink" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/Workshop_procedure.md" target="_blank" rel="noopener"><span class="pl-t">→ <span lang="ko">구글 드라이브 추가 방법</span><span lang="en">How to add the Google Drive shortcut</span></span><span class="pl-u">github.com/littlekg87/DH2026/…/Workshop_procedure.md</span></a>
+            </li>
+            <li><span lang="ko">Colab 런타임을 <code>T4 GPU</code>로 설정 — 생성 모델 Qwen3에 필요</span><span lang="en">Set the Colab runtime to <code>T4 GPU</code> — required by the Qwen3 generation model</span></li>
+          </ol>
+        </div>
+
         <div class="summary"><span lang="ko">모든 라이브러리·모델·데이터를 <strong>한 번에</strong> 준비한다. 이 단계만 지나면 네트워크가 끊겨도 파이프라인은 끝까지 돌아간다.</span><span lang="en">Prepare every library, model and dataset <strong>in one go</strong>. Past this step, the pipeline runs to the end even with the network cut.</span></div>
         <p><span lang="ko">버전을 고정(pin)해 참가자 20명이 완전히 같은 환경에서 실행하도록 한다. Hugging Face Hub를 오프라인으로 봉인(<code style="font-family:var(--mono);color:var(--gold)">HF_HUB_OFFLINE</code>)해, 이후 어떤 셀도 몰래 인터넷에 나가지 않도록 못 박는다. 모델은 모두 공유 드라이브에서 로컬로 읽는다.</span><span lang="en">Versions are pinned so all 20 participants run in exactly the same environment. The Hugging Face Hub is sealed offline (<code style="font-family:var(--mono);color:var(--gold)">HF_HUB_OFFLINE</code>), nailing down that no later cell quietly reaches for the internet. Every model is read locally from the shared Drive.</span></p>
 
