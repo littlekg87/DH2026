@@ -56,6 +56,7 @@ Colab can access it through your My Drive.
 A shortcut is only a pointer to the shared folder—it does not copy the files or
 use additional storage. During the workshop, the notebook reads the models and
 canonical data directly from this shared folder.
+
 ### 2. Set your Colab runtime to GPU
 
 The generation model (Qwen3) requires a GPU.
@@ -199,6 +200,7 @@ keys, no Hugging Face Hub calls during the session.
 바로가기는 공유 폴더를 가리키는 링크이므로 파일을 복사하거나 추가 저장 공간을
 사용하지 않습니다. 워크숍 중에는 노트북이 이 공유 폴더에서 모델과 정본
 데이터를 직접 읽습니다.
+
 ### 2. Colab 런타임을 GPU로 설정하기
 
 생성 모델(Qwen3)은 GPU가 필요합니다.
