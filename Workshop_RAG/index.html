@@ -99,6 +99,34 @@
   .cinnabar-text{color:var(--cinnabar-soft);font-weight:500}
   .teal-text{color:var(--teal-soft);font-weight:500}
 
+  /* 핵심 메시지 — 「최신 LLM」을 눌러 지우면 진짜 답이 열린다 */
+  #finale .creed{margin-top:32px}
+  #finale .creed-q{font-size:clamp(1.05rem,2.2vw,1.2rem);color:var(--paper-dim);line-height:1.7}
+  #finale .creed-wrong{
+    font-family:var(--serif);font-weight:700;font-size:clamp(1.5rem,3.8vw,2.35rem);
+    color:var(--paper);margin-top:12px;display:inline-block;position:relative;
+    transition:color .5s ease,opacity .5s ease;
+  }
+  #finale .creed-wrong::after{
+    content:"";position:absolute;left:-4px;right:-4px;top:52%;height:3px;
+    background:var(--cinnabar);border-radius:2px;
+    transform:scaleX(0);transform-origin:left;
+    transition:transform .55s cubic-bezier(.6,0,.2,1);
+  }
+  #finale.struck .creed-wrong{color:var(--paper-faint);opacity:.5}
+  #finale.struck .creed-wrong::after{transform:scaleX(1)}
+  #finale .creed-turn{
+    max-height:0;opacity:0;overflow:hidden;
+    transition:max-height .75s ease,opacity .75s ease,margin-top .75s ease;
+  }
+  #finale.struck .creed-turn{max-height:28em;opacity:1;margin-top:28px}
+  #finale .creed-turn p{font-size:clamp(1.05rem,2.2vw,1.2rem);color:var(--paper-dim);line-height:1.75;margin:0}
+  #finale .creed-answer{
+    font-family:var(--serif);font-weight:700;font-size:clamp(1.55rem,4vw,2.5rem);
+    line-height:1.5;color:var(--paper);margin-top:20px;
+    padding-left:26px;border-left:3px solid var(--cinnabar);
+  }
+
   /* STEP big number */
   .stephead{display:flex;align-items:flex-start;gap:26px;margin-bottom:8px}
   .stepnum{font-family:var(--serif);font-weight:700;font-size:clamp(3.2rem,8vw,5.5rem);line-height:.85;color:var(--line-soft);flex-shrink:0}
@@ -231,6 +259,28 @@
   #hero .author .welcome{
     display:block;margin-top:13px;
     font-family:var(--serif);font-style:italic;font-size:1.02rem;color:var(--gold);
+  }
+
+  /* 발표자 묶음 — 공동연구자(왼쪽) | 대표(오른쪽). 대표의 좌측 주칠선이 둘을 가른다 */
+  #hero .presenters{
+    display:flex;flex-wrap:wrap;gap:0 34px;align-items:flex-start;margin-top:38px;
+  }
+  #hero .presenters .author{margin-top:0}
+  #hero .coauthors{padding-top:2px}
+  #hero .coauthors .colabel{
+    font-family:var(--sans);font-size:.72rem;letter-spacing:.05em;
+    color:var(--paper-faint);margin-bottom:14px;
+  }
+  #hero .cogrid{
+    display:grid;grid-template-columns:repeat(3,auto);gap:12px 32px;
+  }
+  #hero .cogrid .con{
+    font-family:var(--serif);font-weight:600;font-size:1.02rem;
+    color:var(--paper-dim);letter-spacing:.04em;
+  }
+  #hero .coauthors .coaff{
+    margin-top:15px;font-family:var(--sans);font-weight:300;
+    font-size:.86rem;color:var(--paper-faint);letter-spacing:.04em;
   }
 
   /* ---------- 무엇이 남는가 — 사실 누르면 의미가 열린다 ---------- */
@@ -799,6 +849,7 @@
     <div class="navgroup">
       <div class="label"><span lang="ko">기조</span><span lang="en">Keynote</span></div>
       <a href="#hero"><span class="num">◆</span><span lang="ko">표지</span><span lang="en">Title</span></a>
+      <a href="#resources"><span class="num">·</span><span lang="ko">GitHub · 자료</span><span lang="en">GitHub · resources</span></a>
       <a href="#anxiety"><span class="num">·</span><span lang="ko">불안 — AI에 기대다</span><span lang="en">The unease — leaning on AI</span></a>
       <a href="#rag"><span class="num">·</span><span lang="ko">RAG의 등장</span><span lang="en">Enter RAG</span></a>
       <a href="#limits" class="pivot"><span class="num">·</span><span lang="ko">RAG는 만능인가</span><span lang="en">Is RAG a cure-all?</span></a>
@@ -829,8 +880,8 @@
 
     <div class="navgroup">
       <div class="label"><span lang="ko">마무리</span><span lang="en">Closing</span></div>
-      <a href="#message"><span class="num">·</span><span lang="ko">핵심 메시지</span><span lang="en">The core message</span></a>
-      <a href="#resources"><span class="num">·</span><span lang="ko">GitHub · 자료</span><span lang="en">GitHub · resources</span></a>
+      <a href="#message"><span class="num">·</span><span lang="ko">정리</span><span lang="en">Recap</span></a>
+      <a href="#finale"><span class="num">◆</span><span lang="ko">핵심 메시지</span><span lang="en">The core message</span></a>
     </div>
   </nav>
 
@@ -843,11 +894,25 @@
         <div class="kicker">Build a Working RAG in Half a Day</div>
         <h1><span lang="ko">반나절 만에 만드는<br>작동하는 RAG</span><span lang="en">Build a Working RAG<br>in Half a Day</span></h1>
         <div class="sub"><span lang="ko">UN 정책 보고서와 LangChain으로,<br>답변마다 <span class="cinnabar-text">전거(典據)</span>가 따라붙는 파이프라인을 손으로 짓다</span><span lang="en">Hand-building a pipeline on UN policy reports with LangChain,<br>where every answer carries its <span class="cinnabar-text">provenance</span></span></div>
-        <div class="author">
-          <div class="nm">Kunha Kim</div>
-          <div class="aff"><span lang="ko">서강대학교 · Sogang University</span><span lang="en">Sogang University</span></div>
-          <a class="mail" href="mailto:littlekg87@gmail.com">littlekg87@gmail.com</a>
-          <span class="welcome">Any Co-work, Welcome!</span>
+        <div class="presenters">
+          <div class="coauthors">
+            <div class="colabel"><span lang="ko">공동 연구</span><span lang="en">Co-researchers</span></div>
+            <div class="cogrid">
+              <span class="con" lang="ko">정용호</span><span class="con" lang="en">Yongho Jung</span>
+              <span class="con" lang="ko">정수아</span><span class="con" lang="en">Sua Chung</span>
+              <span class="con" lang="ko">박지우</span><span class="con" lang="en">Jiwoo Park</span>
+              <span class="con" lang="ko">김준한</span><span class="con" lang="en">Junhan Kim</span>
+              <span class="con" lang="ko">김주희</span><span class="con" lang="en">Juehee Kim</span>
+              <span class="con" lang="ko">변혜진</span><span class="con" lang="en">Hyejin Byun</span>
+            </div>
+            <div class="coaff"><span lang="ko">서강대학교</span><span lang="en">Sogang University</span></div>
+          </div>
+          <div class="author">
+            <div class="nm">Kunha Kim</div>
+            <div class="aff"><span lang="ko">서강대학교 · Sogang University</span><span lang="en">Sogang University</span></div>
+            <a class="mail" href="mailto:littlekg87@gmail.com">littlekg87@gmail.com</a>
+            <span class="welcome">Any Co-work, Welcome!</span>
+          </div>
         </div>
 
         <div class="meta-row">
@@ -857,6 +922,48 @@
           <span>Google Colab</span>
         </div>
         <div class="scroll-hint"><span class="dn">↓</span> <span lang="ko">사이드바 목차를 눌러 원하는 단계로 바로 이동</span><span lang="en">Use the sidebar to jump straight to any step</span></div>
+      </div>
+    </section>
+
+    <!-- ============ RESOURCES ============ -->
+    <section id="resources" class="tight">
+      <div class="inner">
+        <div class="eyebrow teal"><span lang="ko">시작 전 · 자료</span><span lang="en">Before we begin · Resources</span></div>
+        <h2><span lang="ko">GitHub · 참고자료</span><span lang="en">GitHub · resources</span></h2>
+        <p class="lead"><span lang="ko">모든 코드는 셀 단위로 공개돼 있다. 각 블록은 Colab 셀 하나에 대응한다.</span><span lang="en">All the code is published cell by cell. Each block corresponds to one Colab cell.</span></p>
+        <div class="reslist">
+          <a class="rescard" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/Workshop_procedure.md" target="_blank" rel="noopener">
+            <div class="rt"><span lang="ko">따라 하는 방법</span><span lang="en">How to follow along</span></div>
+            <div class="rn">Workshop_procedure.md</div>
+            <div class="rd"><span lang="ko">시작 전 준비 · 스택 · 파이프라인 개요 (한/영)</span><span lang="en">Preparation · stack · pipeline overview (KO/EN)</span></div>
+          </a>
+          <a class="rescard" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/workshop_code.md" target="_blank" rel="noopener">
+            <div class="rt"><span lang="ko">셀 단위 코드</span><span lang="en">Cell-by-cell code</span></div>
+            <div class="rn">workshop_code.md</div>
+            <div class="rd"><span lang="ko">STEP 1–10 · 복사해서 붙여넣는 코드 블록</span><span lang="en">STEP 1–10 · copy-and-paste code blocks</span></div>
+          </a>
+          <a class="rescard" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/build_xml.py" target="_blank" rel="noopener">
+            <div class="rt"><span lang="ko">구조화 스크립트</span><span lang="en">The structuring script</span></div>
+            <div class="rn">build_xml.py</div>
+            <div class="rd"><span lang="ko">PDF의 조판을 읽어 계층 XML로 · STEP 3의 본체</span><span lang="en">Reads the PDF's typesetting into hierarchical XML · the body of STEP 3</span></div>
+          </a>
+          <a class="rescard" href="https://github.com/littlekg87/DH2026/tree/main/Workshop_RAG" target="_blank" rel="noopener">
+            <div class="rt"><span lang="ko">리포지토리</span><span lang="en">Repository</span></div>
+            <div class="rn">littlekg87 / DH2026</div>
+            <div class="rd"><span lang="ko">Workshop_RAG 폴더 전체</span><span lang="en">The whole Workshop_RAG folder</span></div>
+          </a>
+        </div>
+
+        <div class="stackgrid" style="margin-top:36px">
+          <div class="stackcard"><div class="sk"><span lang="ko">코퍼스</span><span lang="en">Corpus</span></div><div class="sv">SDG Report 2025</div><div class="sd"><span lang="ko">UN Statistics Division · 51쪽</span><span lang="en">UN Statistics Division · 51 pp.</span></div></div>
+          <div class="stackcard"><div class="sk"><span lang="ko">프레임워크</span><span lang="en">Framework</span></div><div class="sv">LangChain</div></div>
+          <div class="stackcard"><div class="sk"><span lang="ko">인코더</span><span lang="en">Encoder</span></div><div class="sv">all-MiniLM-L6-v2</div></div>
+          <div class="stackcard"><div class="sk"><span lang="ko">벡터 저장소</span><span lang="en">Vector store</span></div><div class="sv">FAISS</div></div>
+          <div class="stackcard"><div class="sk">LLM</div><div class="sv">Qwen3-0.6B</div></div>
+          <div class="stackcard"><div class="sk"><span lang="ko">런타임</span><span lang="en">Runtime</span></div><div class="sv">Colab · T4 GPU</div></div>
+        </div>
+
+        <p style="margin-top:40px;font-family:var(--mono);font-size:.78rem;color:var(--paper-faint)">DH2026 · Build a Working RAG in Half a Day · UN Policy Reports with LangChain</p>
       </div>
     </section>
 
@@ -1719,7 +1826,7 @@ order = np.<span class="c-fn">argsort</span>(distances)             <span class=
     <!-- ============ MESSAGE ============ -->
     <section id="message">
       <div class="inner">
-        <div class="eyebrow"><span lang="ko">마무리 · 핵심 메시지</span><span lang="en">Closing · The core message</span></div>
+        <div class="eyebrow"><span lang="ko">마무리 · 정리</span><span lang="en">Closing · Recap</span></div>
         <h2><span lang="ko">구조를 먼저 이해하고, 정제는 거기에 맞춘다</span><span lang="en">Understand the structure first, then fit the cleaning to it</span></h2>
         <div class="pull"><span lang="ko">자료의 구조가 <span class="accent">검색 단위</span>를 정하고,<br>검색 단위가 답변의 <span class="accent">전거(典據) 단위</span>를 정한다.</span><span lang="en">The structure of the material sets <span class="accent">the unit of retrieval</span>,<br>and the unit of retrieval sets <span class="accent">the unit of provenance</span> in the answer.</span></div>
 
@@ -1734,51 +1841,31 @@ order = np.<span class="c-fn">argsort</span>(distances)             <span class=
 
         <p><span lang="ko">구조를 확정하고 나면 나머지는 따라온다. 무엇을 버릴지가 분명해지고, 어디서 자를지가 분명해지고, 잘린 조각마다 <strong>제 주소</strong>가 붙는다. 전거는 마지막에 덧붙이는 장식이 아니라, <strong class="teal-text">구조를 지킨 결과로 저절로 남는 것</strong>이다.</span><span lang="en">Once the structure is settled, the rest follows. What to discard becomes clear, where to cut becomes clear, and every piece cut carries <strong>its own address</strong>. Provenance is not an ornament added at the end — it is <strong class="teal-text">what remains of its own accord when the structure has been kept</strong>.</span></p>
 
-        <div class="summary"><span lang="ko">그러므로 RAG에서 가장 먼저 할 일은 임베딩 모델을 고르는 것이 아니라, <strong>내 자료가 어떻게 생겼는지 아는 것</strong>이다.</span><span lang="en">So the first thing to do in RAG is not to choose an embedding model, but <strong>to know what your own material looks like</strong>.</span></div>
-
         <p><span lang="ko">이 워크샵이 남기는 것은 챗봇 한 개가 아니라, <strong>여러분의 자료에 그대로 옮겨 쓸 수 있는 방법</strong>이다. 실록이든 관보든 문학 텍스트든 철학 원전이든 — 자료마다 구조가 놓인 자리는 다르지만, <strong>구조를 먼저 읽고 거기에 정제를 맞춘다</strong>는 순서는 같다. 그 순서를 세우는 자리에서 오늘의 작업이 다시 쓰인다.</span><span lang="en">What this workshop leaves you is not one chatbot but <strong>a method you can carry straight over to your own material</strong>. Veritable records, official gazettes, literary texts, philosophical originals — where the structure sits differs with every source, but the order is the same: <strong>read the structure first, then fit the cleaning to it</strong>. Wherever you set that order, today's work is written again.</span></p>
       </div>
     </section>
 
-    <!-- ============ RESOURCES ============ -->
-    <section id="resources" class="tight">
+    <!-- ============ FINALE — 핵심 메시지 ============ -->
+    <section id="finale">
       <div class="inner">
-        <div class="eyebrow teal"><span lang="ko">마무리 · 자료</span><span lang="en">Closing · Resources</span></div>
-        <h2><span lang="ko">GitHub · 참고자료</span><span lang="en">GitHub · resources</span></h2>
-        <p class="lead"><span lang="ko">모든 코드는 셀 단위로 공개돼 있다. 각 블록은 Colab 셀 하나에 대응한다.</span><span lang="en">All the code is published cell by cell. Each block corresponds to one Colab cell.</span></p>
-        <div class="reslist">
-          <a class="rescard" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/Workshop_procedure.md" target="_blank" rel="noopener">
-            <div class="rt"><span lang="ko">따라 하는 방법</span><span lang="en">How to follow along</span></div>
-            <div class="rn">Workshop_procedure.md</div>
-            <div class="rd"><span lang="ko">시작 전 준비 · 스택 · 파이프라인 개요 (한/영)</span><span lang="en">Preparation · stack · pipeline overview (KO/EN)</span></div>
-          </a>
-          <a class="rescard" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/workshop_code.md" target="_blank" rel="noopener">
-            <div class="rt"><span lang="ko">셀 단위 코드</span><span lang="en">Cell-by-cell code</span></div>
-            <div class="rn">workshop_code.md</div>
-            <div class="rd"><span lang="ko">STEP 1–10 · 복사해서 붙여넣는 코드 블록</span><span lang="en">STEP 1–10 · copy-and-paste code blocks</span></div>
-          </a>
-          <a class="rescard" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/build_xml.py" target="_blank" rel="noopener">
-            <div class="rt"><span lang="ko">구조화 스크립트</span><span lang="en">The structuring script</span></div>
-            <div class="rn">build_xml.py</div>
-            <div class="rd"><span lang="ko">PDF의 조판을 읽어 계층 XML로 · STEP 3의 본체</span><span lang="en">Reads the PDF's typesetting into hierarchical XML · the body of STEP 3</span></div>
-          </a>
-          <a class="rescard" href="https://github.com/littlekg87/DH2026/tree/main/Workshop_RAG" target="_blank" rel="noopener">
-            <div class="rt"><span lang="ko">리포지토리</span><span lang="en">Repository</span></div>
-            <div class="rn">littlekg87 / DH2026</div>
-            <div class="rd"><span lang="ko">Workshop_RAG 폴더 전체</span><span lang="en">The whole Workshop_RAG folder</span></div>
-          </a>
+        <div class="eyebrow"><span lang="ko">마무리 · 핵심 메시지</span><span lang="en">Closing · The core message</span></div>
+        <h2><span lang="ko">그래서, 가장 먼저 보아야 할 것</span><span lang="en">So, what to look at first</span></h2>
+
+        <div class="pull"><span lang="ko">RAG의 철학은 <span class="accent">'근거'</span>를 바탕으로 답변을 <span class="accent">'생성'</span>하는 것이다.</span><span lang="en">The philosophy of RAG is to <span class="accent">generate</span> an answer grounded in <span class="accent">evidence</span>.</span></div>
+
+        <div class="creed" id="creed">
+          <div class="creed-q"><span lang="ko">그렇기 때문에 RAG를 설계할 때 우선적으로 고려해야 하는 것은 —</span><span lang="en">That is why the first thing to consider when designing a RAG is —</span></div>
+          <div class="creed-wrong"><span lang="ko">트렌디한 최신 LLM</span><span lang="en">the trendiest new LLM</span></div>
+
+          <div class="creed-turn">
+            <p><span lang="ko">오히려 인문학, 특히 <strong class="teal-text">역사학</strong>에서 오랫동안 강조해온 것, 그리고 다소 지루한 것.</span><span lang="en">It is, rather, what the humanities — <strong class="teal-text">history</strong> above all — have long insisted on, and what sounds rather dull.</span></p>
+            <div class="creed-answer"><span lang="ko">바로 <strong class="cinnabar-text">'자료'</strong>가 어떤 내용인지,<br>어떻게 <strong class="cinnabar-text">구조화</strong>되어 있는지 아는 것이다.</span><span lang="en">Namely, knowing what your <strong class="cinnabar-text">material</strong> actually says,<br>and how it is <strong class="cinnabar-text">structured</strong>.</span></div>
+          </div>
         </div>
 
-        <div class="stackgrid" style="margin-top:36px">
-          <div class="stackcard"><div class="sk"><span lang="ko">코퍼스</span><span lang="en">Corpus</span></div><div class="sv">SDG Report 2025</div><div class="sd"><span lang="ko">UN Statistics Division · 51쪽</span><span lang="en">UN Statistics Division · 51 pp.</span></div></div>
-          <div class="stackcard"><div class="sk"><span lang="ko">프레임워크</span><span lang="en">Framework</span></div><div class="sv">LangChain</div></div>
-          <div class="stackcard"><div class="sk"><span lang="ko">인코더</span><span lang="en">Encoder</span></div><div class="sv">all-MiniLM-L6-v2</div></div>
-          <div class="stackcard"><div class="sk"><span lang="ko">벡터 저장소</span><span lang="en">Vector store</span></div><div class="sv">FAISS</div></div>
-          <div class="stackcard"><div class="sk">LLM</div><div class="sv">Qwen3-0.6B</div></div>
-          <div class="stackcard"><div class="sk"><span lang="ko">런타임</span><span lang="en">Runtime</span></div><div class="sv">Colab · T4 GPU</div></div>
+        <div class="probe">
+          <button class="probebtn" id="creedBtn" type="button"><span class="ic">◎</span><span id="creedLabel"><span lang="ko">정말 그럴까?</span><span lang="en">Is that really so?</span></span></button>
         </div>
-
-        <p style="margin-top:40px;font-family:var(--mono);font-size:.78rem;color:var(--paper-faint)">DH2026 · Build a Working RAG in Half a Day · UN Policy Reports with LangChain</p>
       </div>
     </section>
 
@@ -1974,6 +2061,25 @@ order = np.<span class="c-fn">argsort</span>(distances)             <span class=
     };
 
     btn.addEventListener('click', () => lit ? reset() : light());
+    paint();
+    onLangChange(paint);
+  })();
+
+  // 핵심 메시지 — 「최신 LLM」을 지우면 진짜 답이 열린다 (두 번 누르면 원상복귀)
+  (() => {
+    const sec = document.getElementById('finale');
+    if (!sec) return;
+    const btn   = document.getElementById('creedBtn');
+    const label = document.getElementById('creedLabel');
+    let struck = false;
+    const paint = () => {
+      label.textContent = struck ? L('되돌리기', 'Undo') : L('정말 그럴까?', 'Is that really so?');
+    };
+    btn.addEventListener('click', () => {
+      struck = !struck;
+      sec.classList.toggle('struck', struck);
+      paint();
+    });
     paint();
     onLangChange(paint);
   })();
