@@ -458,6 +458,14 @@
   .prep ol{margin-left:20px;color:var(--paper-dim)}
   .prep ol li{margin:6px 0;font-size:.92rem}
   .prep ol li code{font-family:var(--mono);font-size:.82rem;color:var(--teal-soft);background:var(--ink-3);padding:1px 6px;border-radius:4px}
+  /* prep 박스 안내 링크 — 「구글 드라이브 추가 방법」 */
+  .prep .plink{
+    display:inline-flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+    margin-top:8px;text-decoration:none;
+  }
+  .prep .plink .pl-t{font-size:.9rem;color:var(--teal-soft);border-bottom:1px solid transparent;transition:border-color .16s ease}
+  .prep .plink .pl-u{font-family:var(--mono);font-size:.76rem;color:var(--paper-faint);word-break:break-all}
+  .prep .plink:hover .pl-t{border-bottom-color:var(--teal-soft)}
 
   /* ---------- FOOTNOTE — 번호 위에 올리면 서지 팝업 ---------- */
   .fn{
@@ -1333,7 +1341,9 @@
         <div class="prep">
           <div class="pt"><span lang="ko">시작 전 준비 · 1분</span><span lang="en">Before we start · 1 minute</span></div>
           <ol>
-            <li><span lang="ko">공유 Google Drive 폴더를 <code>내 드라이브</code>에 <strong>바로가기 추가</strong> (다운로드 아님, 포인터만)</span><span lang="en"><strong>Add a shortcut</strong> to the shared Google Drive folder in <code>My Drive</code> (not a download — just a pointer)</span></li>
+            <li><span lang="ko">공유 Google Drive 폴더를 <code>내 드라이브</code>에 <strong>바로가기 추가</strong> (다운로드 아님, 포인터만)</span><span lang="en"><strong>Add a shortcut</strong> to the shared Google Drive folder in <code>My Drive</code> (not a download — just a pointer)</span>
+              <a class="plink" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/Workshop_procedure.md" target="_blank" rel="noopener"><span class="pl-t">→ <span lang="ko">구글 드라이브 추가 방법</span><span lang="en">How to add the Google Drive shortcut</span></span><span class="pl-u">github.com/littlekg87/DH2026/…/Workshop_procedure.md</span></a>
+            </li>
             <li><span lang="ko">Colab 런타임을 <code>T4 GPU</code>로 설정 — 생성 모델 Qwen3에 필요</span><span lang="en">Set the Colab runtime to <code>T4 GPU</code> — required by the Qwen3 generation model</span></li>
           </ol>
         </div>
@@ -1442,6 +1452,9 @@ LLM_DIR     = <span class="c-str">f"{BASE}/LLM"</span></pre>
         <a class="ghlink" href="https://github.com/littlekg87/DH2026/blob/main/Workshop_RAG/workshop_code.md#L11" target="_blank" rel="noopener">
           <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
           workshop_code.md · STEP 1 <span class="arrow">↗</span>
+        </a>
+        <a class="sublink" href="html/step01_source.html">
+          <span lang="ko">보조자료 · 우리가 쓰는 자료</span><span lang="en">Companion · The Material We Use</span> <span class="arrow">→</span>
         </a>
       </div>
     </section>

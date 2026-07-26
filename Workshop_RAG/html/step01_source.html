@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리가 쓰는 자료 · The Material We Use — DH2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<script src="ui.js"></script>
+<style>
+  .doccard{display:flex;gap:26px;align-items:flex-start;border:1px solid var(--line);
+    border-left:3px solid var(--teal);border-radius:12px;padding:24px 26px;
+    background:var(--ink-2);margin:24px 0}
+  .doccard .dc-body{flex:1;min-width:0}
+  .doccard .dc-t{font-family:var(--serif);font-weight:700;font-size:1.34rem;color:var(--paper);line-height:1.3}
+  .doccard .dc-m{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;color:var(--teal-soft);margin-top:7px;text-transform:uppercase}
+  .doccard .dc-d{font-size:.97rem;color:var(--paper-dim);line-height:1.75;margin-top:13px}
+
+  .getlist{display:flex;flex-direction:column;gap:12px;margin:22px 0}
+  .get{display:flex;gap:16px;align-items:baseline;border:1px solid var(--line);
+    border-radius:9px;padding:14px 18px;background:var(--ink-2);text-decoration:none;
+    transition:border-color .16s ease}
+  .get:hover{border-color:var(--teal)}
+  .get .g-k{font-family:var(--mono);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--teal-soft);flex-shrink:0;width:74px}
+  .get .g-b{flex:1;min-width:0}
+  .get .g-t{font-size:1rem;color:var(--paper)}
+  .get .g-u{font-family:var(--mono);font-size:.76rem;color:var(--paper-faint);
+    margin-top:4px;word-break:break-all}
+
+  .density{border:1px solid var(--line);border-radius:10px;padding:20px 22px;
+    background:var(--ink-2);margin:22px 0}
+  .density .dh{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--paper-faint);margin-bottom:14px}
+  .bars{display:flex;align-items:flex-end;gap:2px;height:96px}
+  .bar{flex:1;height:var(--h);min-height:2px;background:var(--teal);
+    border-radius:2px 2px 0 0;opacity:.72;transition:opacity .12s ease}
+  .bar:hover{opacity:1;background:var(--cinnabar)}
+  .density .dx{display:flex;justify-content:space-between;font-family:var(--mono);
+    font-size:.68rem;color:var(--paper-faint);margin-top:8px}
+
+  table.type{width:100%;border-collapse:collapse;margin:20px 0;font-size:.92rem}
+  table.type th{text-align:left;font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--paper-faint);padding:9px 10px;
+    border-bottom:1px solid var(--line-soft)}
+  table.type td{padding:9px 10px;border-bottom:1px solid var(--line);color:var(--paper-dim)}
+  table.type td.fn{font-family:var(--mono);font-size:.84rem;color:var(--paper)}
+  table.type td.sz{font-family:var(--mono);font-size:.84rem;color:var(--teal-soft);white-space:nowrap}
+  table.type td.ct{font-family:var(--mono);font-size:.82rem;text-align:right;white-space:nowrap}
+  table.type td.vd{font-family:var(--mono);font-size:.76rem;white-space:nowrap}
+  table.type tr.keep td.vd{color:var(--teal-soft)}
+  table.type tr.drop td.vd{color:var(--cinnabar-soft)}
+  table.type tr.keep{background:rgba(74,157,142,.05)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="step">STEP 1</span>
+  <span class="brand"><span lang="ko">우리가 쓰는 자료</span><span lang="en">The Material We Use</span></span>
+  <a class="back" href="../index.html#step1">← <span lang="ko">발표자료</span><span lang="en">Slides</span></a>
+</div>
+
+<div class="page">
+
+  <h1><span lang="ko">우리가 쓰는 자료 — SDG Report 2025</span><span lang="en">The Material We Use — SDG Report 2025</span></h1>
+  <p class="lead"><span lang="ko">파이프라인을 짓기 전에 자료부터 본다. 무슨 문서이고, 어디서 받고, 어떻게 생겼는가. 오늘 <strong>구조를 먼저 읽는다</strong>고 한 그 구조가 이 문서 어디에 있는지까지 확인한다.</span><span lang="en">Before building the pipeline, look at the material. What is this document, where do you get it, and what does it look like? We also locate exactly where the structure lives — the structure we said we would <strong>read first</strong>.</span></p>
+
+  <!-- ① 무슨 문서인가 -->
+  <h2><span lang="ko">① 무슨 문서이며, 무슨 목표로 만들었는가</span><span lang="en">① What this document is, and why it was made</span></h2>
+
+  <div class="doccard">
+    <div class="dc-body">
+      <div class="dc-t">The Sustainable Development Goals Report 2025</div>
+      <div class="dc-m">UN Statistics Division · 2025 · 51 pp.</div>
+      <div class="dc-d"><span lang="ko">유엔이 <strong>해마다 내는 지속가능발전목표(SDGs) 진행 보고서</strong>다. 2015년 유엔 총회가 채택한 <strong>17개 목표</strong>가 2030년까지 어디까지 왔는지를, 회원국이 제출한 공식 통계로 점검한다. 목적은 홍보가 아니라 <strong>점검</strong>이다 — 어떤 목표가 궤도에 있고 어떤 목표가 뒤처졌는지를 지표로 판정하고, 그 판단 근거가 되는 수치를 함께 싣는다. 2025년판은 2030년까지 <strong>5년</strong>을 남긴 시점의 중간 점검에 해당한다.</span><span lang="en">The UN's <strong>annual progress report on the Sustainable Development Goals</strong>. It checks how far the <strong>17 Goals</strong> adopted by the General Assembly in 2015 have come toward 2030, using official statistics submitted by member states. Its purpose is not promotion but <strong>assessment</strong> — judging by indicator which Goals are on track and which have fallen behind, and printing the figures that ground each judgement. The 2025 edition is the stock-take with <strong>five years</strong> left to 2030.</span></div>
+    </div>
+  </div>
+
+  <div class="note"><span lang="ko"><strong>왜 이 문서를 골랐는가.</strong> 실습 자료로서 결정적인 것은 <strong>구조가 뚜렷하다</strong>는 점이다. 목표 17개가 각각 제 쪽을 갖고, 그 안에 소제목이 달리고, 소제목 아래 문단이 온다. 게다가 공개 자료여서 누구나 같은 파일을 받아 같은 결과를 재현할 수 있다.</span><span lang="en"><strong>Why this document.</strong> What makes it decisive as a hands-on corpus is that <strong>its structure is explicit</strong>. Each of the 17 Goals holds its own pages, subheadings sit inside them, and paragraphs sit under the subheadings. It is also open, so anyone can fetch the same file and reproduce the same result.</span></div>
+
+  <!-- ② 어디서 받는가 -->
+  <h2><span lang="ko">② 어디서 받을 수 있는가</span><span lang="en">② Where to get it</span></h2>
+  <p><span lang="ko">유엔 통계국(UN Statistics Division)이 공개한다. 아래 주소는 이 PDF 안에 링크로 박혀 있는 공식 주소다. 워크숍에서는 같은 파일을 공유 Drive 폴더에도 올려 두었다.</span><span lang="en">Published by the UN Statistics Division. The addresses below are the official ones embedded as links inside this very PDF. For the workshop the same file also sits in the shared Drive folder.</span></p>
+
+  <div class="getlist">
+    <a class="get" href="https://unstats.un.org/sdgs/files/report/2025/secretary-general-sdg-report-2025--EN.pdf" target="_blank" rel="noopener">
+      <span class="g-k">PDF</span>
+      <span class="g-b">
+        <span class="g-t"><span lang="ko">본 보고서 — 우리가 쓰는 바로 그 파일</span><span lang="en">The report itself — the very file we use</span></span>
+        <span class="g-u">https://unstats.un.org/sdgs/files/report/2025/secretary-general-sdg-report-2025--EN.pdf</span>
+      </span>
+    </a>
+    <a class="get" href="https://unstats.un.org/sdgs/report/2025/" target="_blank" rel="noopener">
+      <span class="g-k">Hub</span>
+      <span class="g-b">
+        <span class="g-t"><span lang="ko">2025년 보고서 페이지 — 통계 부속자료도 여기에</span><span lang="en">The 2025 report page — statistical annex lives here too</span></span>
+        <span class="g-u">https://unstats.un.org/sdgs/report/2025/</span>
+      </span>
+    </a>
+    <a class="get" href="https://unstats.un.org/sdgs/report/2025/extended-report" target="_blank" rel="noopener">
+      <span class="g-k">Extended</span>
+      <span class="g-b">
+        <span class="g-t"><span lang="ko">확장판 — 목표별 상세 서술</span><span lang="en">Extended report — the detailed per-Goal narrative</span></span>
+        <span class="g-u">https://unstats.un.org/sdgs/report/2025/extended-report</span>
+      </span>
+    </a>
+  </div>
+
+  <!-- ③ 구조의 특징 -->
+  <h2><span lang="ko">③ 문서 구조의 특징 — 글보다 그림이 많은 문서</span><span lang="en">③ How the document is built — more picture than prose</span></h2>
+
+  <p><span lang="ko">51쪽 안에 글자는 227,211자다. 그런데 이 문서를 실제로 채우고 있는 것은 글이 아니라 <strong>도표</strong>다. 페이지마다 막대그래프·지도·아이콘이 깔려 있고, 본문은 그 사이를 흐른다.</span><span lang="en">Across 51 pages there are 227,211 characters of text. Yet what actually fills this document is not prose but <strong>charts</strong>. Bar graphs, maps and icons cover every page, and the body text flows between them.</span></p>
+
+  <div class="statgrid">
+    <div class="stat"><div class="sn">51</div>
+      <div class="sl"><span lang="ko">쪽</span><span lang="en">pages</span></div></div>
+    <div class="stat"><div class="sn">227,211</div>
+      <div class="sl"><span lang="ko">글자</span><span lang="en">characters</span></div></div>
+    <div class="stat"><div class="sn">9,344</div>
+      <div class="sl"><span lang="ko">채워진 도형 — 차트 조각</span><span lang="en">filled shapes — chart pieces</span></div></div>
+    <div class="stat"><div class="sn">183</div>
+      <div class="sl"><span lang="ko">쪽당 평균 도형</span><span lang="en">shapes per page</span></div></div>
+  </div>
+
+  <div class="warn"><span lang="ko"><strong>도표가 이미지 파일이 아니다.</strong> 이 PDF에 박힌 진짜 그림 파일(사진 따위)은 23개뿐이고 지면의 4.8%밖에 안 된다. 나머지 도표는 전부 <strong>벡터 도형 10,662개</strong>로 그려져 있다 — 선과 면을 좌표로 찍은 것이다. 그래서 텍스트만 뽑으면 <strong>차트는 통째로 사라지고</strong>, 축에 붙은 숫자와 범례만 문맥 없이 본문 사이에 떨어진다. STEP 2에서 naive chunk가 이상해 보이는 까닭이 여기 있다.</span><span lang="en"><strong>The charts are not image files.</strong> This PDF holds only 23 true raster images (photographs and the like), covering just 4.8% of the page area. Every other chart is drawn as <strong>10,662 vector shapes</strong> — lines and fills placed by coordinate. So when you extract text, <strong>the charts vanish whole</strong>, and only the axis figures and legends drop into the prose without their context. That is why the naive chunks in STEP 2 look the way they do.</span></div>
+
+  <div class="density">
+    <div class="dh"><span lang="ko">쪽마다 도형이 얼마나 많은가 (막대에 마우스를 올리면 쪽·개수)</span><span lang="en">How many shapes per page (hover a bar for page and count)</span></div>
+    <div class="bars"><span class="bar" style="--h:0.5%" title="p1 · 20"></span>
+<span class="bar" style="--h:0.6%" title="p2 · 23"></span>
+<span class="bar" style="--h:0.5%" title="p3 · 19"></span>
+<span class="bar" style="--h:0.0%" title="p4 · 0"></span>
+<span class="bar" style="--h:0.0%" title="p5 · 0"></span>
+<span class="bar" style="--h:2.1%" title="p6 · 80"></span>
+<span class="bar" style="--h:1.9%" title="p7 · 72"></span>
+<span class="bar" style="--h:0.9%" title="p8 · 34"></span>
+<span class="bar" style="--h:0.5%" title="p9 · 19"></span>
+<span class="bar" style="--h:2.8%" title="p10 · 107"></span>
+<span class="bar" style="--h:0.6%" title="p11 · 24"></span>
+<span class="bar" style="--h:2.8%" title="p12 · 109"></span>
+<span class="bar" style="--h:1.3%" title="p13 · 50"></span>
+<span class="bar" style="--h:0.7%" title="p14 · 29"></span>
+<span class="bar" style="--h:5.0%" title="p15 · 194"></span>
+<span class="bar" style="--h:0.6%" title="p16 · 24"></span>
+<span class="bar" style="--h:0.9%" title="p17 · 33"></span>
+<span class="bar" style="--h:1.5%" title="p18 · 59"></span>
+<span class="bar" style="--h:0.5%" title="p19 · 18"></span>
+<span class="bar" style="--h:0.7%" title="p20 · 27"></span>
+<span class="bar" style="--h:0.4%" title="p21 · 16"></span>
+<span class="bar" style="--h:0.9%" title="p22 · 36"></span>
+<span class="bar" style="--h:3.5%" title="p23 · 135"></span>
+<span class="bar" style="--h:4.1%" title="p24 · 157"></span>
+<span class="bar" style="--h:2.9%" title="p25 · 114"></span>
+<span class="bar" style="--h:1.9%" title="p26 · 73"></span>
+<span class="bar" style="--h:1.1%" title="p27 · 41"></span>
+<span class="bar" style="--h:3.6%" title="p28 · 141"></span>
+<span class="bar" style="--h:1.7%" title="p29 · 67"></span>
+<span class="bar" style="--h:1.5%" title="p30 · 57"></span>
+<span class="bar" style="--h:2.1%" title="p31 · 81"></span>
+<span class="bar" style="--h:1.3%" title="p32 · 49"></span>
+<span class="bar" style="--h:0.5%" title="p33 · 18"></span>
+<span class="bar" style="--h:1.2%" title="p34 · 47"></span>
+<span class="bar" style="--h:0.8%" title="p35 · 31"></span>
+<span class="bar" style="--h:1.6%" title="p36 · 61"></span>
+<span class="bar" style="--h:5.2%" title="p37 · 200"></span>
+<span class="bar" style="--h:0.8%" title="p38 · 30"></span>
+<span class="bar" style="--h:100.0%" title="p39 · 3876"></span>
+<span class="bar" style="--h:0.8%" title="p40 · 32"></span>
+<span class="bar" style="--h:3.4%" title="p41 · 131"></span>
+<span class="bar" style="--h:1.8%" title="p42 · 69"></span>
+<span class="bar" style="--h:1.0%" title="p43 · 40"></span>
+<span class="bar" style="--h:2.8%" title="p44 · 110"></span>
+<span class="bar" style="--h:0.0%" title="p45 · 0"></span>
+<span class="bar" style="--h:10.2%" title="p46 · 394"></span>
+<span class="bar" style="--h:8.3%" title="p47 · 321"></span>
+<span class="bar" style="--h:53.5%" title="p48 · 2075"></span>
+<span class="bar" style="--h:0.0%" title="p49 · 0"></span>
+<span class="bar" style="--h:0.0%" title="p50 · 0"></span>
+<span class="bar" style="--h:0.0%" title="p51 · 1"></span></div>
+    <div class="dx"><span>p1</span>
+      <span><span lang="ko">가장 빽빽한 쪽 · p39 · 3,876개</span><span lang="en">busiest · p39 · 3,876</span></span>
+      <span>p51</span></div>
+  </div>
+
+  <p><span lang="ko">도형이 하나도 없는 쪽은 5쪽뿐이다. 바꿔 말하면 46쪽은 어떤 식으로든 그림이 얹혀 있다. 작은 글씨(7.2pt 이하 — 축 숫자·캡션·출처 표기)가 전체 글자의 <strong>10.3%</strong>를 차지하는 것도 같은 이유다. 이 글자들은 <em>문장이 아니라 그림의 부품</em>이다.</span><span lang="en">Only 5 pages carry no shapes at all — meaning 46 pages have graphics on them. For the same reason, small type (7.2pt and under — axis figures, captions, source lines) accounts for <strong>10.3%</strong> of all characters. Those characters are <em>parts of pictures, not sentences</em>.</span></p>
+
+  <!-- ④ 숨겨진 조판 구조 -->
+  <h2><span lang="ko">④ 숨겨진 조판 구조 — 서체와 크기가 곧 구조다</span><span lang="en">④ The hidden typesetting — typeface and size are the structure</span></h2>
+
+  <p><span lang="ko">눈으로 보면 소제목은 굵고 크다. 그런데 텍스트만 뽑으면 그 굵기가 사라진다. "이 줄이 소제목인가"를 <em>글자 내용으로 추측</em>하려 들면 반드시 틀린다. 해결은 간단하다 — <strong>추측하지 말고, 조판을 읽는다.</strong> PDF는 글자마다 서체 이름과 크기를 함께 갖고 있다. 편집자가 이미 구조를 지정해 둔 것이다.</span><span lang="en">To the eye, a subheading is bold and large. Extract the text and that boldness is gone. Try to <em>guess from the wording</em> whether a line is a subheading and you will be wrong. The fix is simple — <strong>do not guess; read the typesetting.</strong> A PDF carries a font name and a size with every character. The editor already encoded the structure.</span></p>
+
+  <table class="type">
+    <thead><tr>
+      <th><span lang="ko">서체</span><span lang="en">Typeface</span></th><th><span lang="ko">크기</span><span lang="en">Size</span></th>
+      <th><span lang="ko">맡은 역할</span><span lang="en">Role</span></th><th style="text-align:right"><span lang="ko">글자수</span><span lang="en">Chars</span></th>
+      <th><span lang="ko">판단</span><span lang="en">Verdict</span></th>
+    </tr></thead>
+    <tbody>
+      <tr class="keep">
+        <td class="fn">Gotham-Black</td><td class="sz">16pt</td>
+        <td class="ro"><span lang="ko">Goal 제목</span><span lang="en">Goal title</span></td>
+        <td class="ct">741</td>
+        <td class="vd"><span lang="ko">싣는다</span><span lang="en">keep</span></td>
+      </tr>
+      <tr class="keep">
+        <td class="fn">GothamBold</td><td class="sz">11pt</td>
+        <td class="ro"><span lang="ko">소제목 — 우리가 찾는 것</span><span lang="en">Subheading — what we look for</span></td>
+        <td class="ct">9,781</td>
+        <td class="vd"><span lang="ko">싣는다</span><span lang="en">keep</span></td>
+      </tr>
+      <tr class="keep">
+        <td class="fn">Whitney-Book</td><td class="sz">9pt</td>
+        <td class="ro"><span lang="ko">본문 문단</span><span lang="en">Body paragraph</span></td>
+        <td class="ct">176,344</td>
+        <td class="vd"><span lang="ko">싣는다</span><span lang="en">keep</span></td>
+      </tr>
+      <tr class="drop">
+        <td class="fn">Whitney-Semibold</td><td class="sz">8.5pt</td>
+        <td class="ro"><span lang="ko">사진 캡션</span><span lang="en">Photo caption</span></td>
+        <td class="ct">3,009</td>
+        <td class="vd"><span lang="ko">버린다</span><span lang="en">drop</span></td>
+      </tr>
+      <tr class="drop">
+        <td class="fn">Whitney-Semibold</td><td class="sz">8pt</td>
+        <td class="ro"><span lang="ko">도표 제목</span><span lang="en">Chart title</span></td>
+        <td class="ct">5,103</td>
+        <td class="vd"><span lang="ko">버린다</span><span lang="en">drop</span></td>
+      </tr>
+      <tr class="drop">
+        <td class="fn">Whitney-Book</td><td class="sz">7pt</td>
+        <td class="ro"><span lang="ko">도표 라벨·출처</span><span lang="en">Chart label / source</span></td>
+        <td class="ct">9,407</td>
+        <td class="vd"><span lang="ko">버린다</span><span lang="en">drop</span></td>
+      </tr>
+      <tr class="drop">
+        <td class="fn">Whitney-Book</td><td class="sz">6.5pt</td>
+        <td class="ro"><span lang="ko">축 숫자·각주</span><span lang="en">Axis figures / footnote</span></td>
+        <td class="ct">6,023</td>
+        <td class="vd"><span lang="ko">버린다</span><span lang="en">drop</span></td>
+      </tr>
+      <tr class="drop">
+        <td class="fn">Gotham-Black</td><td class="sz">8pt</td>
+        <td class="ro"><span lang="ko">머리말·쪽번호</span><span lang="en">Running head / folio</span></td>
+        <td class="ct">1,857</td>
+        <td class="vd"><span lang="ko">버린다</span><span lang="en">drop</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note"><span lang="ko">위 표에서 <strong>싣는다</strong>로 표시된 셋만 모으면 186,866자 — 전체의 82%다. 나머지 18%는 캡션·축 라벨·머리말처럼 <em>문단이 아닌 글자</em>다. 이것을 걸러내는 일이 STEP 3에서 하는 일의 절반이다.</span><span lang="en">Collecting only the three rows marked <strong>keep</strong> gives 186,866 characters — 82% of the whole. The remaining 18% are captions, axis labels and running heads: <em>characters that are not paragraphs</em>. Filtering them out is half of what STEP 3 does.</span></div>
+
+  <p><span lang="ko">이 규칙 하나로 문서 전체가 계층으로 접힌다. <code>Gotham-Black 16pt</code>를 만나면 새 목표가 시작되고, <code>GothamBold 11pt</code>를 만나면 새 절이 시작되며, 그 사이의 <code>Whitney 9pt</code>가 그 절의 본문이 된다. 결과가 정본 XML이다 — <strong>목표 17 · 소제목 108 · 문단 243</strong>. 추측이 아니라 조판을 읽었기 때문에, 오분류도 누락도 없다.</span><span lang="en">That single rule folds the whole document into a hierarchy. Meet <code>Gotham-Black 16pt</code> and a new Goal begins; meet <code>GothamBold 11pt</code> and a new section begins; the <code>Whitney 9pt</code> in between is that section’s body. The result is the canonical XML — <strong>17 goals · 108 subheadings · 243 paragraphs</strong>. Because we read the typesetting instead of guessing, nothing is misclassified and nothing is lost.</span></p>
+
+  <div class="quote"><span lang="ko">자료의 구조는 우리가 만들어 넣는 것이 아니다. 이미 거기 있다 — 다만 조판에 적혀 있을 뿐이다.</span><span lang="en">The structure of the material is not something we impose. It is already there — it just happens to be written in the typesetting.</span></div>
+
+  <div class="foot">
+  DH2026 Workshop · Build a Working RAG in Half a Day<br>
+  <span lang="ko">숫자는 모두 이 페이지를 만들 때 PDF 원본과 정본 XML에서 직접 계산했다.</span><span lang="en">Every figure here was computed from the source PDF and the canonical XML when this page was built.</span><br>
+  <a href="../index.html#step1">← <span lang="ko">발표자료로 돌아가기</span><span lang="en">Back to the slides</span></a>
+   · <a href="step02_chunk.html">STEP 2 · <span lang="ko">청크란 무엇인가</span><span lang="en">What is a chunk</span></a> · <a href="step03_xml.html">STEP 3 · <span lang="ko">왜 XML인가</span><span lang="en">Why XML</span></a>
+</div>
+
+</div>
+</body>
+</html>
