@@ -27,18 +27,35 @@ a minute and prevent the most common hold-ups during the workshop.
 ### 1. Add the shared assets to your Drive
 
 The models and data are prepared for you in a shared Google Drive folder. You do
-**not** need to download them — you only add a shortcut so your Colab can read
-them.
+**not** need to download or copy them. Add a shortcut to the folder so that
+Colab can access it through your My Drive.
 
-1. Open the shared folder: **[DH2026_Workshop (Google Drive)](https://drive.google.com/drive/folders/1nbFRzpxjPUYldNNV800QqhzENzbYR0eW?usp=sharing)**
-2. Click **"Add shortcut to Drive"** (right-click the folder, or use the
-   toolbar).
-3. Place the shortcut in **My Drive** (the top level).
+1. Sign in to Google Drive with the **same Google account that you will use in
+   Colab**.
+2. Open **[DH2026_Workshop (Google Drive)](https://drive.google.com/drive/folders/1nbFRzpxjPUYldNNV800QqhzENzbYR0eW?usp=sharing)**.
+3. In the Google Drive sidebar, click **Shared with me**.
+4. Find the **DH2026_Workshop** folder, right-click it, and select
+   **Organize → Add shortcut**.
+   - If **Add shortcut to Drive** is already visible in the toolbar after
+     opening the shared folder, you may click that instead.
+5. In the location window, select **My Drive**.
+   - Keep **My Drive itself** selected; do not place the shortcut inside another
+     folder.
+6. Click **Add shortcut**.
+7. Open **My Drive** and confirm that **DH2026_Workshop** appears at the top
+   level with a shortcut-arrow icon.
 
-This adds no files to your storage — it is a pointer, not a copy. During the
-workshop your notebook reads the models and the canonical data directly from
-this shared folder.
+> **Important:** Do not rename the shortcut. The workshop code expects the
+> folder at:
+>
+> `/content/drive/MyDrive/DH2026_Workshop`
+>
+> If the folder already appears in the top level of My Drive, you do not need to
+> add another shortcut.
 
+A shortcut is only a pointer to the shared folder—it does not copy the files or
+use additional storage. During the workshop, the notebook reads the models and
+canonical data directly from this shared folder.
 ### 2. Set your Colab runtime to GPU
 
 The generation model (Qwen3) requires a GPU.
@@ -153,17 +170,35 @@ keys, no Hugging Face Hub calls during the session.
 
 ### 1. 공유 자산을 내 드라이브에 추가하기
 
-모델과 데이터는 공유 Google Drive 폴더에 미리 준비되어 있습니다. 다운로드할
-**필요는 없으며**, Colab이 읽을 수 있도록 바로가기만 추가하면 됩니다.
+모델과 데이터는 공유 Google Drive 폴더에 미리 준비되어 있습니다. 파일을
+다운로드하거나 복사할 **필요는 없습니다**. Colab이 내 드라이브를 통해 폴더에
+접근할 수 있도록 바로가기를 추가해 주세요.
 
-1. 공유 폴더 열기: **[DH2026_Workshop (Google Drive)](https://drive.google.com/drive/folders/1nbFRzpxjPUYldNNV800QqhzENzbYR0eW?usp=sharing)**
-2. **"드라이브에 바로가기 추가"** 클릭 (폴더를 우클릭하거나 툴바 이용).
-3. 바로가기를 **내 드라이브(My Drive)** 최상위에 놓기.
+1. Colab에서 사용할 계정과 **동일한 Google 계정**으로 Google Drive에
+   로그인합니다.
+2. **[DH2026_Workshop (Google Drive)](https://drive.google.com/drive/folders/1nbFRzpxjPUYldNNV800QqhzENzbYR0eW?usp=sharing)**을 엽니다.
+3. Google Drive 왼쪽 메뉴에서 **공유 문서함(Shared with me)**을 클릭합니다.
+4. **DH2026_Workshop** 폴더를 찾아 우클릭한 뒤
+   **정리(Organize) → 바로가기 추가(Add shortcut)**를 선택합니다.
+   - 공유 폴더를 연 화면의 툴바에 **드라이브에 바로가기 추가**가 바로 보이면
+     해당 버튼을 눌러도 됩니다.
+5. 위치 선택 창에서 **내 드라이브(My Drive)**를 선택합니다.
+   - 다른 폴더로 들어가지 말고 **내 드라이브 자체**, 즉 최상위를 선택합니다.
+6. **바로가기 추가(Add shortcut)**를 클릭합니다.
+7. **내 드라이브**를 열어 최상위에 화살표 모양의 바로가기 아이콘과 함께
+   **DH2026_Workshop** 폴더가 표시되는지 확인합니다.
 
-이 작업은 저장 공간에 파일을 추가하지 않습니다 — 복사본이 아니라 포인터입니다.
-워크숍 중에는 노트북이 이 공유 폴더에서 모델과 정본(canonical) 데이터를 직접
-읽습니다.
+> **중요:** 바로가기의 이름을 변경하지 마세요. 워크숍 코드는 다음 경로에서
+> 폴더를 찾습니다.
+>
+> `/content/drive/MyDrive/DH2026_Workshop`
+>
+> 해당 폴더가 이미 내 드라이브 최상위에 있다면 바로가기를 다시 추가할 필요가
+> 없습니다.
 
+바로가기는 공유 폴더를 가리키는 링크이므로 파일을 복사하거나 추가 저장 공간을
+사용하지 않습니다. 워크숍 중에는 노트북이 이 공유 폴더에서 모델과 정본
+데이터를 직접 읽습니다.
 ### 2. Colab 런타임을 GPU로 설정하기
 
 생성 모델(Qwen3)은 GPU가 필요합니다.
