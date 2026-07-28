@@ -22,9 +22,11 @@ Kunha Kim will give a total of **three presentations**:
 
 2. **Short Paper** (Jul 29 / 16:30–18:00 / S048 / Room 106)
    *From Searchable Archives to Askable Archives: Designing a RAG-Based Research Interface for The Annals of the Joseon Dynasty*
+   → **[Slides](https://littlekg87.github.io/DH2026/Sillok_RAG/)**
 
 3. **Long Paper** (Jul 30 / 11:00–12:30 / S029 / Room 104)
    *A Distant Reading of the Bulletin of Korean Historical Studies: Temporal Consciousness in Korean Historiographical Publications*
+   → **[Slides](https://littlekg87.github.io/DH2026/Korean_Historiography/)**
 
 ### Other Activities
 
@@ -61,9 +63,11 @@ Any co-work, welcome!
 
 2. **Short paper** (7.29 / 16:30–18:00 / S048 / Room 106)
    *From Searchable Archives to Askable Archives: Designing a RAG-Based Research Interface for The Annals of the Joseon Dynasty*
+   → **[발표자료](https://littlekg87.github.io/DH2026/Sillok_RAG/)**
 
 3. **Long paper** (7.30 / 11:00–12:30 / S029 / Room 104)
    *A Distant Reading of the Bulletin of Korean Historical Studies: Temporal Consciousness in Korean Historiographical Publications*
+   → **[발표자료](https://littlekg87.github.io/DH2026/Korean_Historiography/)**
 
 ### 기타
 
