@@ -2302,6 +2302,56 @@ body[data-lang="en"] .layout-cover .slide-title {
   color: rgba(251, 250, 246, 0.72);
 }
 
+.cover-qr {
+  position: absolute;
+  z-index: 12;
+  top: 88px;
+  right: 14px;
+  display: grid;
+  width: 476px;
+  justify-items: center;
+  gap: 12px;
+  padding: 13px 13px 14px;
+  border: 1px solid rgba(232, 199, 120, 0.82);
+  background: rgba(251, 250, 246, 0.97);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+  color: var(--accent-deep);
+  text-decoration: none;
+}
+
+.cover-qr:hover,
+.cover-qr:focus-visible {
+  outline: 3px solid #e8c778;
+  outline-offset: 3px;
+}
+
+.cover-qr img {
+  display: block;
+  width: 448px;
+  height: 448px;
+}
+
+.cover-qr span {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.cover-qr .qr-label-en {
+  display: none;
+}
+
+body[data-lang="en"] .cover-qr .qr-label-ko {
+  display: none;
+}
+
+body[data-lang="en"] .cover-qr .qr-label-en {
+  display: block;
+}
+
 /* Research question and corpus */
 .question-pair {
   border-top: 2px solid var(--accent-deep);
@@ -4223,6 +4273,27 @@ body[data-lang="en"] .stat-row > b {
         </header>
         <div class="slide-body">${slide.content || ""}</div>
         <div class="slide-visual">${slide.visual || ""}</div>
+        ${
+          index === 0
+            ? `
+        <a
+          class="cover-qr"
+          href="https://littlekg87.github.io/DH2026/Korean_Historiography/DH2026_Historiography_presentation.html#1"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Open this presentation"
+        >
+          <img
+            src="./DH2026_Historiography_QR.svg"
+            width="448"
+            height="448"
+            alt=""
+          />
+          <span class="qr-label-ko">발표자료 열기</span>
+          <span class="qr-label-en">Open the presentation</span>
+        </a>`
+            : ""
+        }
         <span class="slide-footer" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
       </article>
     `;
