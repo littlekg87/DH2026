@@ -18,21 +18,22 @@ Kunha Kim will give a total of **three presentations**:
 
 1. **Workshop** (Jul 27 / 09:00–12:00 / Room 206–208)
    *Build a Working RAG in Half a Day: UN Policy Reports with LangChain*
-   → **[Slides](https://littlekg87.github.io/DH2026/Workshop_RAG/)** · [How to follow along](Workshop_RAG/Workshop_procedure.md) · [Code, cell by cell](Workshop_RAG/workshop_code.md)
+   → **[Slides](https://littlekg87.github.io/DH2026/Workshop_RAG/)** · [Abstract · Zenodo](https://zenodo.org/records/22073445) · [How to follow along](Workshop_RAG/Workshop_procedure.md) · [Code, cell by cell](Workshop_RAG/workshop_code.md)
 
 2. **Short Paper** (Jul 29 / 16:30–18:00 / S048 / Room 106)
    *From Searchable Archives to Askable Archives: Designing a RAG-Based Research Interface for The Annals of the Joseon Dynasty*
-   → **[Slides](https://littlekg87.github.io/DH2026/Sillok_RAG/)**
+   → **[Slides](https://littlekg87.github.io/DH2026/Sillok_RAG/)** · [Abstract · Zenodo](https://zenodo.org/records/22073561)
 
 3. **Long Paper** (Jul 30 / 11:00–12:30 / S029 / Room 104)
    *A Distant Reading of the Bulletin of Korean Historical Studies: Temporal Consciousness in Korean Historiographical Publications*
-   → **[Slides](https://littlekg87.github.io/DH2026/Korean_Historiography/)**
+   → **[Slides](https://littlekg87.github.io/DH2026/Korean_Historiography/)** · [Abstract · Zenodo](https://zenodo.org/records/22073597)
 
 ### Other Activities
 
 1. **Co-authored Presentation** (Jul 31 / 14:00–15:30 / S024 / Room 107)
    *Bibliographic Data as a Primary Source—A Case Study of Scholarly Communication in Modern Korean Historiography (1930s–Present) from the Bulletin for Korean Historical Studies*
    Presenter: **Song, Chiyoung**
+   → [Abstract · Zenodo](https://zenodo.org/records/22135773)
 
 2. **Session Chair** (Jul 30 / 16:30–18:00 / S107 / Room 204–205)
 
@@ -59,21 +60,22 @@ Any co-work, welcome!
 
 1. **Workshop** (7.27 / 09:00–12:00 / Room 206–208)
    *Build a Working RAG in Half a Day: UN Policy Reports with LangChain*
-   → **[발표자료](https://littlekg87.github.io/DH2026/Workshop_RAG/)** · [따라 하는 방법](Workshop_RAG/Workshop_procedure.md) · [셀 단위 코드](Workshop_RAG/workshop_code.md)
+   → **[발표자료](https://littlekg87.github.io/DH2026/Workshop_RAG/)** · [초록 · Zenodo](https://zenodo.org/records/22073445) · [따라 하는 방법](Workshop_RAG/Workshop_procedure.md) · [셀 단위 코드](Workshop_RAG/workshop_code.md)
 
 2. **Short paper** (7.29 / 16:30–18:00 / S048 / Room 106)
    *From Searchable Archives to Askable Archives: Designing a RAG-Based Research Interface for The Annals of the Joseon Dynasty*
-   → **[발표자료](https://littlekg87.github.io/DH2026/Sillok_RAG/)**
+   → **[발표자료](https://littlekg87.github.io/DH2026/Sillok_RAG/)** · [초록 · Zenodo](https://zenodo.org/records/22073561)
 
 3. **Long paper** (7.30 / 11:00–12:30 / S029 / Room 104)
    *A Distant Reading of the Bulletin of Korean Historical Studies: Temporal Consciousness in Korean Historiographical Publications*
-   → **[발표자료](https://littlekg87.github.io/DH2026/Korean_Historiography/)**
+   → **[발표자료](https://littlekg87.github.io/DH2026/Korean_Historiography/)** · [초록 · Zenodo](https://zenodo.org/records/22073597)
 
 ### 기타
 
 1. **공동연구 발표** (7.31 / 14:00–15:30 / S024 / Room 107)
    *Bibliographic Data as a Primary Source—A Case Study of Scholarly Communication in Modern Korean Historiography (1930s–Present) from the Bulletin for Korean Historical Studies*
    발표자: **Song, Chiyoung**
+   → [초록 · Zenodo](https://zenodo.org/records/22135773)
 
 2. **세션 Chair** (7.30 / 16:30–18:00 / S107 / Room 204–205)
 
